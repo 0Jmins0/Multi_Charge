@@ -11,4 +11,4 @@ try:
         print(res)
         pass
 except SystemExit:
-    print("Program stopped")
+    print("Program stoppediji")
