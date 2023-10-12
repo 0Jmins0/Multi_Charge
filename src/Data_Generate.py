@@ -39,8 +39,8 @@ def gen(I):
             q = 0
             s = 0
         if(i == n + 1):
-            x = data[0][1]
-            y = data[0][2]
+            x = data[1][1]
+            y = data[1][2]
             tl = 0
             tr = 840
             q = 0
