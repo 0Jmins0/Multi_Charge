@@ -46,7 +46,7 @@ def ins_customer_to_route(customer,instance,route):
         dis += distance(route[i - 1],route[i],instance)
 
     #尝试所有位置
-    for idx in range(0,len(route) + 2):
+    for idx in range(0,len(route) + 1):
         cur_dis = dis
         route_copy = copy.deepcopy(route)
         route_copy.insert(idx,customer)
@@ -59,12 +59,13 @@ def ins_customer_to_route(customer,instance,route):
             cur_dis += distance(0,customer,instance)
             cur_dis += distance(customer,route[0],instance)
         #插入尾
-        elif(idx == len(route) + 1):
+        elif(idx == len(route)):
             cur_dis -= distance(0,route[idx - 1],instance)
             cur_dis += distance(0,customer,instance)
             cur_dis += distance(customer,route[idx - 1],instance)
         #插中间
         else:
+            # print(len(route),idx)
             cur_dis -= distance(route[idx - 1],route[idx],instance)
             cur_dis += distance(route[idx - 1],customer,instance)
             cur_dis += distance(route[idx],customer,instance)
@@ -106,17 +107,17 @@ def Remove(bank, cur_sol):
         new_sol.append(new_route) # 将新路径添加到新解决方案中
     return new_sol# 返回经过过滤后的新解决方案
 
-def Random_Remove(instance,NonImp,cur_sol):
+def Random_Remove(instance,NonImp,cur_sol): #Rem-1
     bank = [] #删除的节点
     new_sol = [] #新路线
-    N = instance['n']
+    N = instance['num']
     bank = random.sample(range(1,N + 1),min(NonImp,N))
     # 如果不在被删除的列表里，则添加到新列表里
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
 #选取删除后，距离减少最多的点删除
-def Distance_Related_Remove(instance,NonImp,cur_sol):
+def Distance_Related_Remove(instance,NonImp,cur_sol): #Rem-2
     cost_node = []
     bank = []
     for route in cur_sol:
@@ -144,8 +145,9 @@ def Distance_Related_Remove(instance,NonImp,cur_sol):
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
-def Random_Ins(instance,cur_sol,bank):
+def Random_Ins(instance,cur_sol,bank): #Ins-1
     bank_copy = copy.deepcopy(bank)
+    finall_cost = float('inf')
     for _ in range(len(bank_copy)):
         node = random.choice(bank)
         best_route = -1
@@ -159,14 +161,22 @@ def Random_Ins(instance,cur_sol,bank):
                 best_route = j
         if best_route != -1:
             cur_sol[best_route].insert(best_idx, node)
-    return cur_sol
+        finall_cost = best_cost
+    
+    return cur_sol,finall_cost
 
 
-def Distroy_and_Repair(S_cur,Removal_id,Reinsert_id):
-    S_cur = S_cur #删除操作
-    S_cur = S_cur #插入操作
-    cost = check(S_cur)
-    return S_cur,cost
+def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp):
+    new_sol = cur_sol
+    bank = []
+    cost = float('inf')
+    if(Removal_id == 1):
+        bank,new_sol = Random_Remove(instance,NonImp,cur_sol)
+    elif(Removal_id == 2):
+        bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol)
+    if(Insert_id == 1):
+        new_sol,cost = Random_Ins(instance,new_sol,bank)
+    return new_sol,cost
 
 def LNS(instance):
     init_sol ,init_cost= get_init_sol(instance)
@@ -175,11 +185,11 @@ def LNS(instance):
     T = T0
     MaxI = 100 #最大迭代次数
     Terminal = 0 #迭代次数
-
+    NonImp = 0
     while Terminal < MaxI:
-        Removal_id = random.randint(0, 3) #挑选操作
-        Reinsert_id = random.randint(0, 3)
-        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
+        Removal_id = random.randint(1, 2) #挑选操作
+        Reinsert_id = random.randint(1, 1)
+        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id,instance,NonImp) #重构解
         T *= q #降温
 
         diff = new_cost - cur_cost
