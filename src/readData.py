@@ -10,7 +10,7 @@ def readmain(p):
     # 打开CSV文件
     ipad = '/private/var/mobile/Containers/Data/Application/BD13E5CF-FC75-4FE8-910E-9E061253A0E7/Documents/Multi_Charge.git/data/data'+ str(p) + '.csv'
     other = '../data/data' + str(p) + '.csv'
-    with open(ipad, newline='') as csvfile:
+    with open(other, newline='') as csvfile:
         # 创建CSV读取器对象
         csv_reader = csv.reader(csvfile)
 

@@ -15,6 +15,23 @@ def distance(a,b,instance):
     p2 = instance['y'][a] - instance['y'][b]
     return math.sqrt(p1 * p1 + p2 * p2)
 
+#计算一条路径的长度
+def dis_route(route,instance):
+    last = len(route) - 1
+    dis = distance(0,route[0],instance) + distance(0,last,instance)
+    for i in route:
+        if(i != last):
+            dis += distance(i,i + 1,instance)
+    return dis
+
+#计算一个解的花费，包括距离的花费和购车花费
+def cost_sol(sol,instance):
+    cost = 0
+    for route in sol:
+        cost += Vehicle_Cost
+        cost += dis_route(route,instance) * p_dis_cost
+    return cost
+
 #检查路线route是否符合时间窗
 def check_time(route,instance):
     # print("check time",route)
@@ -30,7 +47,7 @@ def check_time(route,instance):
     # print(route , "success")
     return 1
 
-#返回将用户 customer 插入到路线 route 中的最佳位置和相应 cost
+#返回将用户 customer 插入到路线 route 中的最佳位置和相应路线的总 cost
 def ins_customer_to_route(customer,instance,route):
     sum_q = sum(instance['q'][i] for i in route) # 该路线总载货量
     # print("sum :",sum_q)
@@ -41,6 +58,8 @@ def ins_customer_to_route(customer,instance,route):
     best_dis = float('inf')
     best_idx = -1
     #未插入的route距离
+    # print("len", len(route))
+    # print(route[len(route) - 1])
     dis = distance(0,route[0],instance) + distance(0,route[len(route) - 1],instance)# 该路线总距离
     for i in range(1,len(route)):
         dis += distance(route[i - 1],route[i],instance)
@@ -78,14 +97,14 @@ def ins_customer_to_route(customer,instance,route):
 # 获取初始多车路线
 def get_init_sol(instance):
     route_pool = []  # 存储多车路线的池子
-    init_cost = 0  # 初始化总成本为0
     bank = [i for i in range(1, instance['num'] + 1)]  # 初始化银行，包含所有顾客编号
     for i in bank:  # 遍历银行中的每个顾客
-        init_cost = Vehicle_Cost + 2 * distance(i, 0, instance)  # 初始化成本为车辆成本加上顾客到仓库的往返距离
+        init_cost = Vehicle_Cost + 2 * distance(i, 0, instance) * p_dis_cost # 初始化成本为车辆成本加上顾客到仓库的往返距离
         best_cost = init_cost  # 当前最小的“遗憾值”
         best_route = -1  # 插入的最佳路线
         best_idx = -1  # 插入的最佳路线的最佳位置
-        for j in range(len(route_pool)):  # 遍历当前已有的多车路线
+        for j in range(0,len(route_pool)):  # 遍历当前已有的多车路线
+            # print("sd",route_pool[j])
             cur_idx, cur_cost = ins_customer_to_route(i, instance, route_pool[j])  # 尝试插入顾客到路线中
             if cur_cost < best_cost:  # 如果插入后的成本更低
                 best_route = j  # 更新最佳路线
@@ -97,9 +116,11 @@ def get_init_sol(instance):
             route_pool.append(route)  # 将新路线添加到多车路线池中
         else:
             route_pool[best_route].insert(best_idx, i)  # 在最佳路线的最佳位置插入顾客
-        init_cost += best_cost  # 更新总成本
+
+    init_cost = cost_sol(route_pool,instance)# 更新总成本
     return route_pool, init_cost  # 返回多车路线池和初始化总成本
 
+#将一些点，从当前解中删除
 def Remove(bank, cur_sol):
     new_sol = []# 创建一个空列表来存储新的解决方案
     for route in cur_sol:# 遍历当前解决方案中的每一条路径
@@ -140,14 +161,14 @@ def Distance_Related_Remove(instance,NonImp,cur_sol): #Rem-2
             tt.append(i)
             cost_node.append(tt)
     sort_list = sorted(cost_node,key = lambda x : x[0])
-    for i in range(NonImp):
+    Min = min(len(sort_list),NonImp)
+    for i in range(Min):
         bank.append(sort_list[i][1])
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
 def Random_Ins(instance,cur_sol,bank): #Ins-1
     bank_copy = copy.deepcopy(bank)
-    finall_cost = float('inf')
     for _ in range(len(bank_copy)):
         node = random.choice(bank)
         best_route = -1
@@ -161,8 +182,7 @@ def Random_Ins(instance,cur_sol,bank): #Ins-1
                 best_route = j
         if best_route != -1:
             cur_sol[best_route].insert(best_idx, node)
-        finall_cost = best_cost
-    
+    finall_cost = cost_sol(cur_sol,instance)
     return cur_sol,finall_cost
 
 
@@ -170,10 +190,14 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp):
     new_sol = cur_sol
     bank = []
     cost = float('inf')
+    #Removal
     if(Removal_id == 1):
         bank,new_sol = Random_Remove(instance,NonImp,cur_sol)
     elif(Removal_id == 2):
         bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol)
+
+    new_sol = [sol for sol in new_sol if(len(sol) != 0)] #有些路线被删除为空，需要删除这些路线
+    #Insert
     if(Insert_id == 1):
         new_sol,cost = Random_Ins(instance,new_sol,bank)
     return new_sol,cost
