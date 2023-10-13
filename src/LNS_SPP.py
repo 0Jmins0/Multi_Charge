@@ -52,6 +52,7 @@ def ins_customer_to_route(customer,instance,route):
     sum_q = sum(instance['q'][i] for i in route) # 该路线总载货量
     # print("sum :",sum_q)
     # print("ins_customer_to_route",customer,route)
+    # print(customer)
     if(sum_q + instance['q'][customer] > Max_cap):
         return -1,float('inf')
     # print("ins_customer_to_route")
@@ -137,44 +138,77 @@ def Random_Remove(instance,NonImp,cur_sol): #Rem-1
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
-#选取删除后，距离减少最多的点删除
-def Distance_Related_Remove(instance,NonImp,cur_sol): #Rem-2
+#初始化任意两点距离
+def Init_Dis(instance):
+    Dis_List = []
+    Prepra = 1
+    Num = instance['num']
+    for i in range(1, Num + 1):
+        for j in range(1, Num + 1):
+            pp = []
+            pp.append(i)
+            pp.append(j)
+            pp.append(distance(i,j,instance))
+            Dis_List.append(pp)
+    Dis_List = sorted(Dis_List, key=lambda x: x[2])
+    Dis_List = sorted(Dis_List, key=lambda x: x[0])
+    return Dis_List
+
+#计算所有其他客户与所选择客户之间的距离，并删除距离较近的客户。
+def Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List): #Rem-2
     cost_node = []
     bank = []
-    for route in cur_sol:
-        for i in range (len(route)):
-            cost = 0
-            #该路线只有一个点
-            if(i == 0 and i + 1 != len(route) - 1):
-                cost = distance(0,i,instance) + distance(i ,i + 1,instance)
-            #仓库出来访问的第一个点
-            elif(i == 0):
-                cost = distance(0,i,instance) * 2
-            #回到仓库的最后一个点
-            elif(i == len(route) - 1):
-                cost = distance(0,i,instance) + distance(i - 1,i, instance)
-            #其他点
-            else:
-                cost = distance(i ,i + 1,instance) + distance(i, i - 1,instance)
-            tt = []
-            tt.append(cost)
-            tt.append(i)
-            cost_node.append(tt)
-    sort_list = sorted(cost_node,key = lambda x : x[0])
-    Min = min(len(sort_list),NonImp)
-    for i in range(Min):
-        bank.append(sort_list[i][1])
+    Num = instance['num']
+    Min = min(Num - 1,NonImp)
+    node = random.randint(1,Num)
+    start = (node - 1) * Num + 1
+    # print("bankk",node,Num,start,len(Dis_List))
+    for i in range(0,Min):
+        bank.append(Dis_List[start + i][1])
     new_sol = Remove(bank,cur_sol)
+    # print("bank",bank)
     return bank,new_sol
+
+#在每个路线中选择一个随机的起始点和一个随机的客户序列长度
+def String_Remove(instance,NonImp,cur_sol):
+    return
+
+#于每个客户，计算如果将该客户从其当前路线中移除，会导致总成本发生多大的变化。
+#通常包括了行驶距离、时间窗口违规、容量违规等因素。对于每个客户，记录下其对总成本的影响。
+def Worst_removal(instance,NonImp,cur_sol):
+    return
+
+#对于每个客户，计算其最早出发时间和最晚服务时间窗口之间的差异。
+#从上一步骤计算出的差异中，选择那些差异显著的客户，即那些最早出发时间和最晚服务时间窗口之间的差异较大的客户。
+def Late_Arrival_Removal(instance,NonImp,cur_sol):
+    return
+
+#将送货选项（客户）根据其地理位置划分为多个矩形区域。区域数量预先设置
+#从预定义的矩形区域中随机选择一个区域。
+#随机选择一个区域，将当前解决方案中属于该区域的所有客户从其当前路线中移除。
+def Zone_Removal(instance,NonImp,cur_sol):
+    return
+
+#随机选择一个客户，对于每个客户，计算其出发时间与所选择客户的出发时间之间的接近程度。
+#删除那些出发时间与所选择客户接近的客户。
+def Time_Related_Removal(instance,NonImp,cur_sol):
+    return
+
+#随机选择一条路线，然后使用Kruskal算法将这条路线上的客户分成两个簇（clusters），然后随机选择一个簇中的所有客户进行移除
+#从两个簇中随机选择一个簇，然后将该簇中的所有客户都移除。
+def Cluster_Removal():
+    return
 
 def Random_Ins(instance,cur_sol,bank): #Ins-1
     bank_copy = copy.deepcopy(bank)
+    # print("bank",bank)
     for _ in range(len(bank_copy)):
         node = random.choice(bank)
         best_route = -1
         best_idx = -1
         best_cost = float('inf')
         for j in range(len(cur_sol)):
+            # print(node,bank)
             cur_idx ,cur_cost = ins_customer_to_route(node,instance,cur_sol[j])
             if(cur_cost < best_cost):
                 best_idx = cur_idx
@@ -182,11 +216,11 @@ def Random_Ins(instance,cur_sol,bank): #Ins-1
                 best_route = j
         if best_route != -1:
             cur_sol[best_route].insert(best_idx, node)
+            bank.remove(node)
     finall_cost = cost_sol(cur_sol,instance)
     return cur_sol,finall_cost
 
-
-def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp):
+def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp,Dis_List):
     new_sol = cur_sol
     bank = []
     cost = float('inf')
@@ -194,15 +228,19 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp):
     if(Removal_id == 1):
         bank,new_sol = Random_Remove(instance,NonImp,cur_sol)
     elif(Removal_id == 2):
-        bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol)
+        bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List)
+    # print(Removal_id)
+    # print(new_sol)
 
     new_sol = [sol for sol in new_sol if(len(sol) != 0)] #有些路线被删除为空，需要删除这些路线
     #Insert
     if(Insert_id == 1):
         new_sol,cost = Random_Ins(instance,new_sol,bank)
+    # print(new_sol)
     return new_sol,cost
 
 def LNS(instance):
+    Dis_List = Init_Dis(instance)
     init_sol ,init_cost= get_init_sol(instance)
     best_sol , best_cost= init_sol,init_cost
     cur_sol , cur_cost = init_sol, init_cost
@@ -212,8 +250,9 @@ def LNS(instance):
     NonImp = 0
     while Terminal < MaxI:
         Removal_id = random.randint(1, 2) #挑选操作
-        Reinsert_id = random.randint(1, 1)
-        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id,instance,NonImp) #重构解
+        # Reinsert_id = random.randint(1, 1)
+        Reinsert_id = 1
+        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id,instance,NonImp,Dis_List) #重构解
         T *= q #降温
 
         diff = new_cost - cur_cost
@@ -228,10 +267,13 @@ def LNS(instance):
                 cur_sol = new_sol
                 cur_cost = new_cost
 
-        if new_cost > best_cost:
+        if cur_cost < best_cost:
+            best_sol = cur_sol
+            best_cost = cur_cost
+            print(NonImp,best_cost, best_sol)
             NonImp = 0 #连续没有提升的次数归零
-            best_sol = new_sol
-            best_cost = new_cost
+
+
         else:
             NonImp += 1
         Terminal += 1
