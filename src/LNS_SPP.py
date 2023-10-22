@@ -7,6 +7,8 @@ Vehicle_Cost = 1000 # 每辆车的价格
 Speed = 1
 Service_Time = 100 # 服务时间
 p_dis_cost = 1 # 距离和花费的系数，距离乘该系数为花费
+Battery_Capacity = 100 # 电池容量
+p_dis_charge = 1 #距离和电量的系数，距离乘以系数为耗电量
 T0 = 187
 q = 0.88
 #返回用户点 a 和 b 之间的距离
@@ -33,7 +35,7 @@ def cost_sol(sol,instance):
     return cost
 
 #检查路线route是否符合时间窗
-def check_time(route,instance):
+def check_time(route,instance): # 检查时间框可行性
     # print("check time",route)
     last_arrval = instance['tr'][route[-1]] - Service_Time
     for i in range(len(route) - 1,0,-1):
@@ -45,6 +47,7 @@ def check_time(route,instance):
             return 0
         last_arrval = max(last_arrval,instance['tl'][i - 1])
     # print(route , "success")
+
     return 1
 
 #返回将用户 customer 插入到路线 route 中的最佳位置和相应路线的总 cost
@@ -240,7 +243,7 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp,Dis_List):
     return new_sol,cost
 
 def LNS(instance):
-    Dis_List = Init_Dis(instance)
+    Dis_List = Init_Dis(instance) #初始化任意两点距离
     init_sol ,init_cost= get_init_sol(instance)
     best_sol , best_cost= init_sol,init_cost
     cur_sol , cur_cost = init_sol, init_cost
@@ -272,7 +275,6 @@ def LNS(instance):
             best_cost = cur_cost
             print(NonImp,best_cost, best_sol)
             NonImp = 0 #连续没有提升的次数归零
-
 
         else:
             NonImp += 1
