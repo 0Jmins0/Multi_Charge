@@ -1,41 +1,31 @@
-# Multi_ch
+# Multi_ch、
+
+
+## 流程
+1. 入口 ： ``fit.py``
+2. 调 ``test.py`` 读入数据，同时调用 ``main``获取初始路线池
+3. ``LNS``:
+   1. 获取初始解 ``get_init_sol``： 按顺序尝试每一个可插入位置，找到最佳目前最佳插入位置，不能插入时，新建一条路线。
+   2. 退火：通过不同的删除和插入操作，不断重构解，如果变好了，就保留，如果变差了，就概率保留。
+3. 删除操作：
+   1. ``Random_Remove(instance,NonImp,cur_sol)`` 从当前路径池 ``cur_sol`` 中，随机删除 ``NonImp`` 个点
+   2. ``Distance_Related_Remove(instasnce,NonUImp,Cur_sol,Dis_List`` 随机挑选一个点，删除掉与这个点距离最近的 ``min(N - 1,NonImp)`` 个点
+   3. 
+4. 插入操作：
+   1. ``Random_Ins(instance,cur_sol,bank)`` 将删除掉的 ``bank`` 中的点，随机的插入到当前解 ``cur_sol`` 中
 ## DP方案
 
-``dp[i][j]``  : 走到点 `i` 进行充电，且充到 `j` 格电量，充电车走的最短距离
 
-``dp[i][j] = min(dp[k][p] + dis(i,k),dp[i][j])``  : 上一个充电的点为 `k` ，且充到了 `p` 格电
+``DP[i][j][k][0/1]``: 充电车到 ``i`` 点，还剩 ``j`` 的电量，充 ``k`` 的电量
 
-``dis(i,k)``  : 充电车从 `i` 到 `k` 的距离
+0: 总消耗 pd * distance + pk * charge (系数 * 距离 + 系数 * 充电量)
 
-``sum_dis[i][k]``  : 电车从 `i` 经过一系列点，走到 `k` 一共需要的距离
+1：最晚充电的点( ``k > 0``,``dp[i][j][k][1] = i``、``k == 0`` , 前一个转移来的点的 ``1``)
 
-``p_dis_charge``  : 距离和电量消耗的关系系数
+范围 ： ``[node_num][0-100][0-100]``
 
-`p` 的范围 ：`[sum_dis[i][k] * p_dis_charge,Battery_Capacity]`
-
-复杂度：$O(n^4)$
-
-```C++
-# node_number 该条路径上的客户点加起点终点的数量
-# route[0],route[node_number - 1] 为仓库
-# route[1:node_number - 2] 为客户点
-# dp数组初始化为 INF
-dp[0][Battery_Capacity] = 0 #满电量出发
-for i in range(0,node_number):
-    for j in range(0,Battery_Capacity + 1):
-        for k in range(0,i):
-            # 电车从 i 经过一系列点到 k 的耗电量
-            sum_dis = sum_dis_list[i] - sum_dis_list[k - 1]
-            consumption = int(sum_dis * p_dis_charge)
-
-            # 充电车从 i 到 k 的距离
-            dis = distance(route[i], route[k], instance)
-
-            #上一个充电的点，充电到 p 电量
-            for p in range(consumption,Battery_Capacity + 1):
-                dp[route[i]][j] = min(dp[route[i]][j],dp[route[k]][p] + dis)
-```
-
+## 一些个问题设定
+1. 充电时间远小于服务时间
 
 ## 一些问题
 

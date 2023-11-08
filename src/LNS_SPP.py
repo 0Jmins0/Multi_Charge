@@ -142,6 +142,7 @@ def Random_Remove(instance,NonImp,cur_sol): #Rem-1
     return bank,new_sol
 
 #初始化任意两点距离
+# 按照相同点到不同点的距离排序
 def Init_Dis(instance):
     Dis_List = []
     Prepra = 1
@@ -173,8 +174,16 @@ def Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List): #Rem-2
     return bank,new_sol
 
 #在每个路线中选择一个随机的起始点和一个随机的客户序列长度
-def String_Remove(instance,NonImp,cur_sol):
-    return
+def String_Remove(instance,NonImp,cur_sol): #Rem-3
+    bank = []
+    for sol in cur_sol:
+        Len = len(sol)
+        Start = random.randint(0,Len - 1)
+        Del_len = min(NonImp,Len - Start + 1)
+        for i in range(Start,Len):
+            bank.append(sol[i])
+    new_sol = Remove(bank,cur_sol)
+    return bank,new_sol
 
 #于每个客户，计算如果将该客户从其当前路线中移除，会导致总成本发生多大的变化。
 #通常包括了行驶距离、时间窗口违规、容量违规等因素。对于每个客户，记录下其对总成本的影响。
@@ -232,6 +241,8 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp,Dis_List):
         bank,new_sol = Random_Remove(instance,NonImp,cur_sol)
     elif(Removal_id == 2):
         bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List)
+    elif(Removal_id == 3):
+        bank,new_sol = String_Remove(instance,NonImp,cur_sol)
     # print(Removal_id)
     # print(new_sol)
 
