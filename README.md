@@ -200,7 +200,7 @@ q = 0.88
            dp[i][j][0][0] = dp[i - 1][j - kk + cus][kk][0]
       
       # 充电
-      if(dp[i][j][k][0] < dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost):
+      if(dp[i][j][k][0] > dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost):
           dp[i][j][k][0] = dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost
           dp[i][j][k][1] = i
       ```
