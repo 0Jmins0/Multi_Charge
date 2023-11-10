@@ -208,6 +208,8 @@ q = 0.88
       1. `ans = min(dp[n][][][0])`,对应 `J` 的剩余电量，充电量 `K` ,最后一次充电点 `now = dp[n][J][K][1]`
       2. 路线：
       ```python
+      # for(pre = now - 1,pre >= 1,pre --)
+      cus = dis(pre,now) * p_dis_charge
       if (ans == dp[pre][J + cus - kk][kk][0] + (dis(now,pre) * p_dis_charge + K) * P_Charge_Cost):
           ans -= (dis(now,pre) * p_dis_charge + K) * P_Charge_Cost
           now = pre
