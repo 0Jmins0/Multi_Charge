@@ -184,11 +184,14 @@ q = 0.88
    1. 方程 `dp[i][j][k][0/1]` : 刚走到第 `i` 个点时，还剩 `j` 个电量，在 `i` 点充了 `k` 个电，
       1. 0：花费，
       2. 1：最晚充电的点
+      3. 2：最晚充电点的充电量
    2. 初始化
       1. `dp[][][][0] = INF`
       2. `dp[][][][1] = -1`
-      3. `dp[0][100][0][0] = 0`
-      4. `dp[0][100][0][1] = 0`
+      3. `dp[][][][2] = -1`
+      4. `dp[0][100][0][0] = 0`
+      5. `dp[0][100][0][1] = 0`
+      6. `dp[0][100][0][2] = 0`
    3. 转移
       1. `cus = dis(i,i-1) * P_Dis_Charge` ： `i` 到 `i - 1` 的耗电量
       2. 
@@ -198,24 +201,31 @@ q = 0.88
       if(dp[i][j][0][0] > dp[i - 1][j - kk + cus][kk][0]):
            dp[i][j][0][1] = p
            dp[i][j][0][0] = dp[i - 1][j - kk + cus][kk][0]
+           # dp[i][j][0][2] = kk
       
       # 充电
       if(dp[i][j][k][0] > dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost):
           dp[i][j][k][0] = dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost
           dp[i][j][k][1] = i
+          dp[i][j][k][2] = kk
       ```
    4. 答案
-      1. `ans = min(dp[n][][][0])`,对应 `J` 的剩余电量，充电量 `K` ,最后一次充电点 `now = dp[n][J][K][1]`
+      1. `ans = min(dp[n][][][0])`,
+         2. 剩余电量 `J`，
+         3. 充电量 `K` ,
+         4. 最后一次充电点 `pre = dp[n][J][K][1]`
+         5. 最后一次充电点充电量 `KK = dp[n][J][K][2]`
       2. 路线：
       ```python
-      # for(pre = now - 1,pre >= 1,pre --)
-      cus = dis(pre,now) * p_dis_charge
-      if (ans == dp[pre][J + cus - kk][kk][0] + (dis(now,pre) * p_dis_charge + K) * P_Charge_Cost):
-          ans -= (dis(now,pre) * p_dis_charge + K) * P_Charge_Cost
-          now = pre
-          K = kk
-          J -= cus
-          ANS.append(now)
+      # now = n
+      # while (pre != 0):
+      #   ANS.append(pre)
+      #   cus = dis(now,pre) * p_dis_charge
+      #   J = J + cus - KK # pre 点对应的剩余电量
+      #   K = KK # pre 点对应的充电量
+      #   now = pre
+      #   pre = dp[now][J][K][1] # pre 的前一个点
+      #   KK = dp[now][J][K][2] # pre 前一个点对应的充电量
       ```
    
 
