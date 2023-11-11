@@ -68,6 +68,14 @@ def Get_Sol_Cost(sol):
 
 #检查路线route是否符合时间窗
 def check_time(route): # 检查时间框可行性
+    Len = len(route)
+    now_l = 0
+    now_r = 840
+    time_window = []
+    for i in range(0,Len,-1):
+        L = instance['tl']
+        R = instance['tr']
+        s = instance['s']
 
     return 1
 
