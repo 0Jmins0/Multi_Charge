@@ -20,17 +20,18 @@ P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离�
 def Init_Dis():
     dis_list = []
     N = instance['N']
-    for i in range(1, N + 1):
-        for j in range(1, N + 1):
+    for i in range(0, N + 1):
+        line = []
+        for j in range(0, N + 1):
             pp = []
             pp.append(i)
             pp.append(j)
-            pp.append(distance(i,j,instance))
-            dis_list.append(pp)
-    dis_list = sorted(dis_list, key=lambda x: x[2])
-    dis_list = sorted(dis_list, key=lambda x: x[0])
+            pp.append(Get_Distance(i,j))
+            line.append(pp)
+        dis_list.append(line)
+    # dis_list = sorted(dis_list, key=lambda x: x[2])
+    # dis_list = sorted(dis_list, key=lambda x: x[0])
     return dis_list
-
 
 def Init(Instance):
     global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
@@ -65,20 +66,75 @@ def Get_Sol_Cost(sol):
         cost += Delivery_Cost
     return cost
 
-
 #检查路线route是否符合时间窗
 def check_time(route): # 检查时间框可行性
     Len = len(route)
-    now_l = 0
-    now_r = 840
-    time_window = []
+    time_window = [[0, 840] for _ in range(Len)]
+    last_arr = 0 # 最晚到达
+    last_leave = 840 # 最晚离开
     for i in range(0,Len,-1):
-        L = instance['tl']
-        R = instance['tr']
-        s = instance['s']
+        R = instance['tr'][i]
+        s = instance['s'][i]
+        dis_time = Get_Distance(i,i + 1) * P_Delivery_Speed
+        last_leave = last_arr - dis_time
+        last_arr = min(R,last_leave) - s
+        time_window[i][1] = last_leave
+        if(last_leave + s > R):
+            return []
 
-    return 1
+    early_arr = 0 # 最早到达
+    early_leave = 0 # 最早离开
+    for i in range(0,Len):
+        L = instance['tl'][i]
+        s = instance['s'][i]
+        dis_time = Get_Distance(i,i + 1) * P_Delivery_Speed
+        early_arr = early_leave + dis_time
+        early_leave = max(early_arr,L) + s
+        time_window[i + 1][0] = early_arr
+    return time_window
 
+#返回将用户 customer 插入到路线 route 中的最佳位置和相应路线的总 cost
+def ins_customer_to_route(customer,route):
+    sum_q = sum(instance['q'][i] for i in route) # 该路线总载货量
+    # print("sum :",sum_q)
+    # print("ins_customer_to_route",customer,route)
+    # print(customer)
+    if(sum_q + instance['q'][customer] > Delivery_Capacity):
+        return -1,float('inf')
+    # print("ins_customer_to_route")
+    best_dis = float('inf')
+    best_idx = -1
+    #未插入的route距离
+    # print("len", len(route))
+    # print(route[len(route) - 1])
+    cur_dis = 0
+    Len = len(route)
+    for i in range(0,Len):
+        cur_dis += Dis_List[route[i]][route[i + 1]][2]
+    #尝试所有位置
+    for idx in range(1,Len):
+        route_copy = copy.deepcopy(route)
+        route_copy.insert(idx,customer)
+        #如果该位置插入不符合时间窗则跳过
+        if(len(check_time(route_copy)) == 0):
+            continue
+        cur_dis = Get_Distance(route[idx],customer) + Get_Distance(customer,route[idx + 1])\
+                  - Get_Distance(route[idx],route[idx + 1])
+        if(cur_dis < best_dis):
+            best_dis = cur_dis
+            best_idx = idx
+        best_cost = float('inf')
+        if(best_dis != float('inf')):
+            best_cost = best_dis * P_Dis_Charge * P_Charge_Cost
+    return best_idx,best_cost
+
+#将一些点，从当前解中删除
+def Remove(bank, cur_sol):
+    new_sol = []# 创建一个空列表来存储新的解决方案
+    for route in cur_sol:# 遍历当前解决方案中的每一条路径
+        new_route = [node for node in route if node not in bank]# 创建一个新路径，其中包含不在银行中的节点
+        new_sol.append(new_route) # 将新路径添加到新解决方案中
+    return new_sol# 返回经过过滤后的新解决方案
 
 # 获取初始多车路线
 def Get_Init_Sol():
@@ -110,64 +166,6 @@ def Get_Init_Sol():
 
 
 
-#返回将用户 customer 插入到路线 route 中的最佳位置和相应路线的总 cost
-def ins_customer_to_route(customer,instance,route):
-    sum_q = sum(instance['q'][i] for i in route) # 该路线总载货量
-    # print("sum :",sum_q)
-    # print("ins_customer_to_route",customer,route)
-    # print(customer)
-    if(sum_q + instance['q'][customer] > Max_cap):
-        return -1,float('inf')
-    # print("ins_customer_to_route")
-    best_dis = float('inf')
-    best_idx = -1
-    #未插入的route距离
-    # print("len", len(route))
-    # print(route[len(route) - 1])
-    dis = distance(0,route[0],instance) + distance(0,route[len(route) - 1],instance)# 该路线总距离
-    for i in range(1,len(route)):
-        dis += distance(route[i - 1],route[i],instance)
-
-    #尝试所有位置
-    for idx in range(0,len(route) + 1):
-        cur_dis = dis
-        route_copy = copy.deepcopy(route)
-        route_copy.insert(idx,customer)
-        #如果该位置插入不符合时间窗则跳过
-        if(check_time(route_copy,instance) == 0):
-            continue
-        #插入头
-        if(idx == 0):
-            cur_dis -= distance(0,route[idx],instance)
-            cur_dis += distance(0,customer,instance)
-            cur_dis += distance(customer,route[0],instance)
-        #插入尾
-        elif(idx == len(route)):
-            cur_dis -= distance(0,route[idx - 1],instance)
-            cur_dis += distance(0,customer,instance)
-            cur_dis += distance(customer,route[idx - 1],instance)
-        #插中间
-        else:
-            # print(len(route),idx)
-            cur_dis -= distance(route[idx - 1],route[idx],instance)
-            cur_dis += distance(route[idx - 1],customer,instance)
-            cur_dis += distance(route[idx],customer,instance)
-
-        if(cur_dis < best_dis):
-            best_dis = cur_dis
-            best_idx = idx
-    return best_idx,best_dis
-
-
-
-#将一些点，从当前解中删除
-def Remove(bank, cur_sol):
-    new_sol = []# 创建一个空列表来存储新的解决方案
-    for route in cur_sol:# 遍历当前解决方案中的每一条路径
-        new_route = [node for node in route if node not in bank]# 创建一个新路径，其中包含不在银行中的节点
-        new_sol.append(new_route) # 将新路径添加到新解决方案中
-    return new_sol# 返回经过过滤后的新解决方案
-
 def Random_Remove(instance,NonImp,cur_sol): #Rem-1
     bank = [] #删除的节点
     new_sol = [] #新路线
@@ -177,21 +175,6 @@ def Random_Remove(instance,NonImp,cur_sol): #Rem-1
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
-
-def Init_Dis(instance):
-    Dis_List = []
-    Prepra = 1
-    Num = instance['num']
-    for i in range(1, Num + 1):
-        for j in range(1, Num + 1):
-            pp = []
-            pp.append(i)
-            pp.append(j)
-            pp.append(distance(i,j,instance))
-            Dis_List.append(pp)
-    Dis_List = sorted(Dis_List, key=lambda x: x[2])
-    Dis_List = sorted(Dis_List, key=lambda x: x[0])
-    return Dis_List
 
 #计算所有其他客户与所选择客户之间的距离，并删除距离较近的客户。
 def Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List): #Rem-2
