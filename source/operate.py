@@ -1,4 +1,7 @@
 # Created on iPad.
+import random
+import copy
+
 from LNS_SPP import instance
 from LNS_SPP import Dis_List
 from LNS_SPP import NonImp
@@ -69,11 +72,11 @@ def String_Remove(cur_sol): #Rem-3
     for sol in cur_sol:
         Len = len(sol) - 2
         start = random.randint(1,Len)
-        Del_len = min(NonImp,Len - Start + 1)
+        Del_len = min(NonImp,Len - start + 1)
         random_len = random.randint(0,Del_len)
         for i in range(start,start + random_len):
             bank.append(sol[i])
-    new_sol = Remove(bank,cur_sol)
+    new_sol = LS.Remove(bank,cur_sol)
     return bank,new_sol
 
 #于每个客户，计算如果将该客户从其当前路线中移除，会导致总成本发生多大的变化。
@@ -103,9 +106,7 @@ def Cluster_Removal():
     return
 
 
-
-
-
+###############################       插入操作符     ##########################################
 
 def Random_Ins(cur_sol,bank): #Ins-1
     bank_copy = copy.deepcopy(bank)
@@ -114,7 +115,7 @@ def Random_Ins(cur_sol,bank): #Ins-1
         node = random.choice(bank)
         best_route = -1
         best_idx = -1
-        best_cost = Vehicle_Cost + 2 * LS.Get_Distance(0,node) * P_Dis_Charge * P_Charge_Cost
+        best_cost = Delivery_Cost + 2 * LS.Get_Distance(0,node) * P_Dis_Charge * P_Charge_Cost
         for j in range(len(cur_sol)):
             # print(node,bank)
             cur_idx ,cur_cost = LS.Ins_Customer_To_Route(node,cur_sol[j])
@@ -131,6 +132,6 @@ def Random_Ins(cur_sol,bank): #Ins-1
             route.append(node)
             route.append(instance['N'] + 1)
             cur_sol.append(route)
-    finall_cost = cost_sol(cur_sol,instance)
+    finall_cost = LS.Get_Sol_Cost(cur_sol)
     return cur_sol,finall_cost
 
