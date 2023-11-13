@@ -15,6 +15,9 @@ P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以
 P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
 P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
 
+Remove_Pool = [1,2] # 删除操作池
+Insert_Pool = [1] # 插入操作池
+
 # 初始化任意两点距离
 # 按照相同点到不同点的距离排序
 def Init_Dis():
@@ -141,29 +144,50 @@ def Get_Init_Sol():
     route_pool = []  # 存储多车路线的池子
     bank = [i for i in range(1, instance['N'] + 1)]  # 初始化银行，包含所有顾客编号
     for i in bank:  # 遍历银行中的每个顾客
-        init_cost = Vehicle_Cost + 2 * distance(i, 0, instance) * p_dis_cost # 初始化成本为车辆成本加上顾客到仓库的往返距离
+        init_cost = Delivery_Cost + 2 * Get_Distance(0,i) * P_Dis_Charge * P_Charge_Cost# 初始化成本为新开一条路线的费用
         best_cost = init_cost  # 当前最小的“遗憾值”
         best_route = -1  # 插入的最佳路线
         best_idx = -1  # 插入的最佳路线的最佳位置
         for j in range(0,len(route_pool)):  # 遍历当前已有的多车路线
             # print("sd",route_pool[j])
-            cur_idx, cur_cost = ins_customer_to_route(i, instance, route_pool[j])  # 尝试插入顾客到路线中
+            cur_idx, cur_cost = ins_customer_to_route(i, route_pool[j])  # 尝试插入顾客到路线中
             if cur_cost < best_cost:  # 如果插入后的成本更低
                 best_route = j  # 更新最佳路线
                 best_idx = cur_idx  # 更新最佳位置
                 best_cost = cur_cost  # 更新最佳成本
         if best_cost == init_cost:  # 如果没有找到更好的插入位置
             route = []  # 创建一个新的路线
+            route.append(0)
             route.append(i)  # 将当前顾客添加到新路线中
+            route.append(instance['N'] + 1)
             route_pool.append(route)  # 将新路线添加到多车路线池中
         else:
             route_pool[best_route].insert(best_idx, i)  # 在最佳路线的最佳位置插入顾客
 
-    init_cost = cost_sol(route_pool,instance)# 更新总成本
+    init_cost = Get_Sol_Cost(route_pool)# 更新总成本
     return route_pool, init_cost  # 返回多车路线池和初始化总成本
 
 
+def Distroy_and_Repair(cur_sol,Removal_id,Insert_id):
+    new_sol = cur_sol
+    bank = []
+    cost = float('inf')
+    #Removal
+    if(Removal_id == 1):
+        bank,new_sol = Random_Remove(cur_sol)
+    elif(Removal_id == 2):
+        bank,new_sol = Distance_Related_Remove(cur_sol)
+    elif(Removal_id == 3):
+        bank,new_sol = String_Remove(cur_sol)
+    # print(Removal_id)
+    # print(new_sol)
 
+    new_sol = [sol for sol in new_sol if(len(sol) != 0)] #有些路线被删除为空，需要删除这些路线
+    #Insert
+    if(Insert_id == 1):
+        new_sol,cost = Random_Ins(instance,new_sol,bank)
+    # print(new_sol)
+    return new_sol,cost
 
 
 def Random_Remove(instance,NonImp,cur_sol): #Rem-1
@@ -250,41 +274,21 @@ def Random_Ins(instance,cur_sol,bank): #Ins-1
     finall_cost = cost_sol(cur_sol,instance)
     return cur_sol,finall_cost
 
-def Distroy_and_Repair(cur_sol,Removal_id,Insert_id,instance,NonImp,Dis_List):
-    new_sol = cur_sol
-    bank = []
-    cost = float('inf')
-    #Removal
-    if(Removal_id == 1):
-        bank,new_sol = Random_Remove(instance,NonImp,cur_sol)
-    elif(Removal_id == 2):
-        bank,new_sol = Distance_Related_Remove(instance,NonImp,cur_sol,Dis_List)
-    elif(Removal_id == 3):
-        bank,new_sol = String_Remove(instance,NonImp,cur_sol)
-    # print(Removal_id)
-    # print(new_sol)
 
-    new_sol = [sol for sol in new_sol if(len(sol) != 0)] #有些路线被删除为空，需要删除这些路线
-    #Insert
-    if(Insert_id == 1):
-        new_sol,cost = Random_Ins(instance,new_sol,bank)
-    # print(new_sol)
-    return new_sol,cost
-
-def LNS(instance):
-    Dis_List = Init_Dis(instance) #初始化任意两点距离
-    init_sol ,init_cost= get_init_sol(instance)
+def LNS(Instance):
+    Init(Instance) #初始化任意两点距离
+    init_sol , init_cost= Get_Init_Sol()
     best_sol , best_cost= init_sol,init_cost
     cur_sol , cur_cost = init_sol, init_cost
     T = T0
-    MaxI = 100 #最大迭代次数
-    Terminal = 0 #迭代次数
+    MaxI = 100 # 最大迭代次数
+    Terminal = 0 # 迭代次数
     NonImp = 0
     while Terminal < MaxI:
-        Removal_id = random.randint(1, 2) #挑选操作
-        # Reinsert_id = random.randint(1, 1)
-        Reinsert_id = 1
-        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id,instance,NonImp,Dis_List) #重构解
+        Removal_id = random.choice(Remove_Pool) # 挑选删除操作
+        Reinsert_id = random.choice(Insert_Pool) # 挑选插入操作
+
+        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
         T *= q #降温
 
         diff = new_cost - cur_cost
