@@ -11,5 +11,5 @@ def Read_Data(p):
         for row in reader:
             for header, value in row.items():
                 columns[header].append(value)
-    N = len(columns['x'])
+    N = len(columns['x']) - 2
     return N,columns
