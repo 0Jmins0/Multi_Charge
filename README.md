@@ -148,14 +148,6 @@ q = 0.88
 `def Get_Init_Sol():`
 1. 作用：获得一个路线池及其花费
 
-`def LNS(instance):` 
-1. 作用：获得一个路线池及其花费
-
-
-### operate.py
-#### 功能
-对路线池进行操作的函数，以及各类操作符
-#### 函数
 `def Distroy_and_Repair(cur_sol,removal_id,insert_id):`
 1. 作用：将当前路径池进行一次删除和擦入操作，返回操作后的路线池。
 2. 输入：
@@ -180,6 +172,10 @@ q = 0.88
 `def Random_Ins(cur_sol,bank):`
 1. 编号：1
 2. 方法：随机
+
+`def LNS(instance):` 
+1. 作用：获得一个路线池及其花费
+
 
 
 ### feasiblity.py

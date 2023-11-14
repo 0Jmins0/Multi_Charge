@@ -10,6 +10,6 @@ def Read_Data(p):
         # Iterate through the rows and append each value to the corresponding column
         for row in reader:
             for header, value in row.items():
-                columns[header].append(value)
+                columns[header].append(int(value))
     N = len(columns['x']) - 2
     return N,columns
