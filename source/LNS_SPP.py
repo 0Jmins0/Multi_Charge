@@ -1,10 +1,13 @@
 import math
 import random
 import copy
+
+import numpy as np
+
 import global_parameter as gp
 instance = {}
 Dis_List = []
-NonImp = 0
+NonImp = 1
 T0 = 187
 q = 0.88
 Delivery_Capacity = gp.Delivery_Capacity # 送货车最大载货量
@@ -15,7 +18,7 @@ P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以
 P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
 P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
 
-Remove_Pool = [1,2] # 删除操作池
+Remove_Pool = [1,2,3] # 删除操作池
 Insert_Pool = [1] # 插入操作池
 
 # 初始化任意两点距离
@@ -23,9 +26,9 @@ Insert_Pool = [1] # 插入操作池
 def Init_Dis():
     dis_list = []
     N = instance['N']
-    for i in range(0, N + 1):
+    for i in range(0, N + 2):
         line = []
-        for j in range(0, N + 1):
+        for j in range(0, N + 2):
             pp = []
             pp.append(i)
             pp.append(j)
@@ -44,6 +47,8 @@ def Init(Instance):
 
 # 返回用户点 a 和 b 之间的距离
 def Get_Distance(a,b):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     try:
         p1 = instance['x'][a] - instance['x'][b]
         p2 = instance['y'][a] - instance['y'][b]
@@ -54,15 +59,19 @@ def Get_Distance(a,b):
 
 # 查询一条路径的花费,不算购车花费
 def Get_Route_Cost(route):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     Len = len(route)
     dis = 0
     for i in range(0,Len - 1):
         dis += Get_Distance(route[i],route[i + 1])
-    cost = dis * P_Dis_Charge * P_Charge_Cost
+    cost = round(dis * P_Dis_Charge * P_Charge_Cost)
     return cost
 
 # 计算一个解的花费，包括距离的花费和购车花费
 def Get_Sol_Cost(sol):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     cost = 0
     for route in sol:
         cost += Get_Route_Cost(route)
@@ -71,33 +80,40 @@ def Get_Sol_Cost(sol):
 
 #检查路线route是否符合时间窗
 def check_time(route): # 检查时间框可行性
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     Len = len(route)
     time_window = [[0, 840] for _ in range(Len)]
-    last_arr = 0 # 最晚到达
+    last_arr = 840 # 最晚到达
     last_leave = 840 # 最晚离开
-    for i in range(0,Len,-1):
-        R = instance['tr'][i]
-        s = instance['s'][i]
-        dis_time = Get_Distance(i,i + 1) * P_Delivery_Speed
+    for i in range(Len - 1,0,-1):
+        L = instance['tl'][route[i - 1]]
+        R = instance['tr'][route[i - 1]]
+        s = instance['s'][route[i - 1]]
+        dis_time = Get_Distance(route[i],route[i - 1]) * P_Delivery_Speed
         last_leave = last_arr - dis_time
         last_arr = min(R,last_leave) - s
-        time_window[i][1] = last_leave
-        if(last_leave + s > R):
+        time_window[i - 1][1] = round(last_leave)
+        # print(time_window)
+        if(last_leave - s < L):
             return []
 
     early_arr = 0 # 最早到达
     early_leave = 0 # 最早离开
-    for i in range(0,Len):
-        L = instance['tl'][i]
-        s = instance['s'][i]
-        dis_time = Get_Distance(i,i + 1) * P_Delivery_Speed
+    for i in range(0,Len - 1):
+        L = instance['tl'][route[i + 1]]
+        s = instance['s'][route[i + 1]]
+        dis_time = Get_Distance(route[i],route[i + 1]) * P_Delivery_Speed
         early_arr = early_leave + dis_time
         early_leave = max(early_arr,L) + s
-        time_window[i + 1][0] = early_arr
+        time_window[i + 1][0] = round(early_arr)
+    # print(f"time_window:{time_window}")
     return time_window
 
 #返回将用户 customer 插入到路线 route 中的最佳位置和相应路线的总 cost
 def Ins_Customer_To_Route(customer,route):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     sum_q = sum(instance['q'][i] for i in route) # 该路线总载货量
     # print("sum :",sum_q)
     # print("ins_customer_to_route",customer,route)
@@ -112,27 +128,33 @@ def Ins_Customer_To_Route(customer,route):
     # print(route[len(route) - 1])
     cur_dis = 0
     Len = len(route)
-    for i in range(0,Len):
+    # print(f"Len:{Len}")
+    for i in range(0,Len - 1):
+        # print(f"i:{i}")
+        # print("cur_dis: ",route[i],route[i + 1])
+        # print(f"Dis_List:i:{route[i]},j:{route[i + 1]},val:{Dis_List[route[i]][route[i + 1]][2]}")
         cur_dis += Dis_List[route[i]][route[i + 1]][2]
     #尝试所有位置
+    best_cost = float('inf')
     for idx in range(1,Len):
         route_copy = copy.deepcopy(route)
         route_copy.insert(idx,customer)
         #如果该位置插入不符合时间窗则跳过
         if(len(check_time(route_copy)) == 0):
             continue
-        cur_dis = Get_Distance(route[idx],customer) + Get_Distance(customer,route[idx + 1])\
-                  - Get_Distance(route[idx],route[idx + 1])
+        cur_dis = Get_Distance(route[idx],customer) + Get_Distance(customer,route[idx - 1])\
+                  - Get_Distance(route[idx],route[idx - 1])
         if(cur_dis < best_dis):
             best_dis = cur_dis
             best_idx = idx
-        best_cost = float('inf')
         if(best_dis != float('inf')):
-            best_cost = best_dis * P_Dis_Charge * P_Charge_Cost
+            best_cost = round(best_dis * P_Dis_Charge * P_Charge_Cost)
     return best_idx,best_cost
 
 #将一些点，从当前解中删除
 def Remove(bank, cur_sol):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     new_sol = []# 创建一个空列表来存储新的解决方案
     for route in cur_sol:# 遍历当前解决方案中的每一条路径
         new_route = [node for node in route if node not in bank]# 创建一个新路径，其中包含不在银行中的节点
@@ -141,10 +163,12 @@ def Remove(bank, cur_sol):
 
 # 获取初始多车路线
 def Get_Init_Sol():
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     route_pool = []  # 存储多车路线的池子
     bank = [i for i in range(1, instance['N'] + 1)]  # 初始化银行，包含所有顾客编号
     for i in bank:  # 遍历银行中的每个顾客
-        init_cost = Delivery_Cost + 2 * Get_Distance(0,i) * P_Dis_Charge * P_Charge_Cost# 初始化成本为新开一条路线的费用
+        init_cost = Delivery_Cost + round(2 * Get_Distance(0,i) * P_Dis_Charge * P_Charge_Cost)# 初始化成本为新开一条路线的费用
         best_cost = init_cost  # 当前最小的“遗憾值”
         best_route = -1  # 插入的最佳路线
         best_idx = -1  # 插入的最佳路线的最佳位置
@@ -169,6 +193,8 @@ def Get_Init_Sol():
 
 
 def Distroy_and_Repair(cur_sol,Removal_id,Insert_id):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     try:
         new_sol = cur_sol
         bank = []
@@ -181,23 +207,27 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id):
         elif(Removal_id == 3):
             bank,new_sol = String_Remove(cur_sol)
         # print(Removal_id)
-        # print(new_sol)
-
-        new_sol = [sol for sol in new_sol if(len(sol) != 0)] #有些路线被删除为空，需要删除这些路线
+        # print("bank:",bank)
+        # print(f"Remove_id:{Removal_id},bank:{bank}")
+        new_sol = [sol for sol in new_sol if(len(sol) != 2)] #有些路线被删除为空，只剩下起点和终点，需要删除这些路线
+        # print("remove:", new_sol)
         #Insert
         if(Insert_id == 1):
-            new_sol,cost = Random_Ins(instance,new_sol,bank)
-        # print(new_sol)
+            new_sol,cost = Random_Ins(new_sol,bank)
+        # print("insert",new_sol)
         return new_sol,cost
     except Exception as e:
         print(f"From Distroy_and_Repair get an error: {e}")
 
 
 def Random_Remove(cur_sol): #Rem-1
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     bank = [] #删除的节点
     new_sol = [] #新路线
     N = instance['N']
     bank = random.sample(range(1,N + 1),min(NonImp,N))
+    # print(f"Random_Remove: NonImp:{NonImp},N:{N},bank:{bank}")
     # 如果不在被删除的列表里，则添加到新列表里
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
@@ -205,6 +235,8 @@ def Random_Remove(cur_sol): #Rem-1
 
 #计算所有其他客户与所选择客户之间的距离，并删除距离较近的客户。
 def Distance_Related_Remove(cur_sol): #Rem-2
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     cost_node = []
     bank = []
     Num = instance['N']
@@ -223,6 +255,8 @@ def Distance_Related_Remove(cur_sol): #Rem-2
 
 #在每个路线中选择一个随机的起始点和一个随机的客户序列长度
 def String_Remove(cur_sol): #Rem-3
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     bank = []
     for sol in cur_sol:
         Len = len(sol) - 2
@@ -264,15 +298,18 @@ def Cluster_Removal():
 ###############################       插入操作符     ##########################################
 
 def Random_Ins(cur_sol,bank): #Ins-1
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     try:
-
         bank_copy = copy.deepcopy(bank)
         # print("bank",bank)
         for _ in range(len(bank_copy)):
             node = random.choice(bank)
+            bank.remove(node)
+            # print(f"bank:{bank},node:{node}")
             best_route = -1
             best_idx = -1
-            best_cost = Delivery_Cost + 2 * Get_Distance(0,node) * P_Dis_Charge * P_Charge_Cost
+            best_cost = Delivery_Cost + round(2 * Get_Distance(0,node) * P_Dis_Charge * P_Charge_Cost)
             for j in range(len(cur_sol)):
                 # print(node,bank)
                 cur_idx ,cur_cost = Ins_Customer_To_Route(node,cur_sol[j])
@@ -282,7 +319,6 @@ def Random_Ins(cur_sol,bank): #Ins-1
                     best_route = j
             if best_route != -1:
                 cur_sol[best_route].insert(best_idx, node)
-                bank.remove(node)
             else:
                 route = []
                 route.append(0)
@@ -297,20 +333,23 @@ def Random_Ins(cur_sol,bank): #Ins-1
 
 
 def LNS(Instance):
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     Init(Instance) #初始化任意两点距离
-    print(Dis_List)
+    # print(Dis_List)
     init_sol , init_cost= Get_Init_Sol()
     best_sol , best_cost= init_sol,init_cost
     cur_sol , cur_cost = init_sol, init_cost
     T = T0
     MaxI = 100 # 最大迭代次数
     Terminal = 0 # 迭代次数
-    NonImp = 0
+    NonImp = 1
     while Terminal < MaxI:
         Removal_id = random.choice(Remove_Pool) # 挑选删除操作
         Reinsert_id = random.choice(Insert_Pool) # 挑选插入操作
-
+        # print("Best: ",NonImp, best_cost, best_sol)
         new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
+        # print("New: ",NonImp, new_sol, new_cost)
         T *= q #降温
 
         diff = new_cost - cur_cost
@@ -328,10 +367,12 @@ def LNS(Instance):
         if cur_cost < best_cost:
             best_sol = cur_sol
             best_cost = cur_cost
-            print(NonImp,best_cost, best_sol)
-            NonImp = 0 #连续没有提升的次数归零
-
+            # print(NonImp,best_cost, best_sol)
+            NonImp = 1 #连续没有提升的次数归零
         else:
             NonImp += 1
         Terminal += 1
-    return best_sol,best_cost
+    time_window = []
+    for route in best_sol:
+        time_window.append(check_time(route))
+    return best_sol,best_cost,Dis_List,time_window
