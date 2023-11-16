@@ -1,9 +1,5 @@
-import math
-import random
-import copy
 import global_parameter as gp
 import numpy as np
-import LNS_SPP as LS
 
 
 Delivery_Capacity = gp.Delivery_Capacity # 送货车最大载货量
@@ -19,20 +15,18 @@ def check(route_pool,instance,Dis_List): #DP部分
     ANS = []
     for route in route_pool:
         N = len(route) - 2
+
         # 初始化
         dp = np.zeros((N + 2, Battery_Capacity + 1, Battery_Capacity + 1, 4)).tolist()
         for i in range(0,N + 2):
             for j in range(0,Battery_Capacity + 1):
                 for k in range(0,Battery_Capacity + 1):
-                    # print(i,j,k)
                     dp[i][j][k][0] = float('inf')
                     dp[i][j][k][1] = -1
                     dp[i][j][k][2] = -1
                     dp[i][j][k][3] = 0
 
         dp[0][Battery_Capacity][0][0] = 0
-        # dp[0][Battery_Capacity][0][1] = 0
-
 
         # 转移
         for i in range(1,N + 2):
@@ -45,7 +39,7 @@ def check(route_pool,instance,Dis_List): #DP部分
                         # j + k <= Battery_Capacity
                         if(j - kk + cus > Battery_Capacity ):
                             continue
-                        # print(i-1,j-kk+cus,kk)
+
                         p = dp[i - 1][j - kk + cus][kk][1]
                         if (dp[i][j][0][0] > dp[i - 1][j - kk + cus][kk][0]):
                             dp[i][j][0][0] = dp[i - 1][j - kk + cus][kk][0]
@@ -59,8 +53,9 @@ def check(route_pool,instance,Dis_List): #DP部分
                             dp[i][j][k][1] = i
                             dp[i][j][k][2] = p
                             dp[i][j][k][3] = kk
+
+        # 回溯
         ans = float('inf')
-        # print(dp)
         J = K = KK = now = pre = 0
         for j in range(0,Battery_Capacity + 1):
             for k in range(0,Battery_Capacity - j + 1):
@@ -71,22 +66,13 @@ def check(route_pool,instance,Dis_List): #DP部分
         now = dp[N + 1][J][K][1]
         pre = dp[N + 1][J][K][2]
         KK = dp[N + 1][J][K][3]
-        # print(dp[N + 1])
-        # print(f"now:{now},pre:{pre},KK:{KK},ans:{ans}")
-        # if (now == N + 1):
-        #     ANS.append(route[N + 1])
         now = N + 1
-        # if(pre == -1):
-        #     print(f"check {route[N]}:{Dis_List[0][route[N]][2] * P_Dis_Charge}")
-        #     return []
         while (pre != -1):
-            # print(pre)
             ANS.append(route[pre])
             cus = round(Dis_List[route[now]][route[pre]][2] * P_Dis_Charge)
             J = J + cus - KK  # pre 点对应的剩余电量
             K = KK  # pre 点对应的充电量
             now = pre
-            # print(f'J:{J},K:{K},now:{now},pre:{pre}')
             pre = dp[now][J][K][2]  # pre 的前一个点
             KK = dp[now][J][K][3]  # pre 前一个点对应的充电量
 

@@ -12,4 +12,5 @@ def Read_Data(p):
             for header, value in row.items():
                 columns[header].append(int(value))
     N = len(columns['x']) - 2
-    return N,columns
+    columns['N'] = N
+    return columns

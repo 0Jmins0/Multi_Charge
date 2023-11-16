@@ -36,23 +36,22 @@ def Get_Time_OK(x1,y1,x2,y2,tl,tr,s):
 
 def gen(I):
     n = random.randint(10,50)
-    n = 6
+    if(I == 0):
+        n = 6
     data = []
     # 0,n + 1 : 仓库，[1,n] : 用户
     for i in range(0, n + 2):
         t = []
         # 编号
         number = i
+        # 坐标
         ok = 0
         while(ok == 0):
             ok = 1
-            # 坐标
             x = np.random.randint(-180, 180)
-            y = np.random.randint(-180, 180)
+            y = np.random.randint(-90, 90)
             for j in range(0,i):
                 ok = ok & Get_Dis_OK(data[j][1],data[j][2],x,y)
-
-
         # 服务时间
         s = np.random.randint(10,30)
         ok = 0
@@ -77,15 +76,9 @@ def gen(I):
             tr = 840
             q = 0
             s = 0
-        t.append(number)
-        t.append(x)
-        t.append(y)
-        t.append(tl)
-        t.append(tr)
-        t.append(q)
-        t.append(s)
+        t.append(number),t.append(x),t.append(y),t.append(tl),t.append(tr),t.append(q),t.append(s)
         data.append(t)
-        # print(t)
+
     file_name = '..\\data\\data' + str(I) + '.csv'
     header = ['num','x','y','tl','tr','q','s']
     with open(file_name,'w',encoding = 'utf-8',newline='') as file:
@@ -93,6 +86,5 @@ def gen(I):
         writer.writerow(header)
         for p in data:
             writer.writerow(p)
-# for i in range(1,51):
-#     gen(i)
-gen(0)
+for i in range(0,51):
+    gen(i)
