@@ -24,8 +24,10 @@ def Draw(instance,route_pool,charge_node,time_window,Dis_List):
     for route in route_pool:
         Len = len(route)
         for i in range(0,Len - 1):
-            x1 = X[route[i]], x2 = X[route[i + 1]]
-            y1 = Y[route[i]], y2 = Y[route[i + 1]]
+            x1 = X[route[i]]
+            x2 = X[route[i + 1]]
+            y1 = Y[route[i]]
+            y2 = Y[route[i + 1]]
             # 路线
             plt.plot([x1, x2], [y1, y2], color=color_cycle[number])
 
