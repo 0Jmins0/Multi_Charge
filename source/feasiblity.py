@@ -1,7 +1,6 @@
 import global_parameter as gp
 import numpy as np
 
-
 Delivery_Capacity = gp.Delivery_Capacity # 送货车最大载货量
 Battery_Capacity = gp.Battery_Capacity # 送货车电池容量
 Delivery_Cost = gp.Delivery_Cost # 每辆送货车的价格
@@ -67,13 +66,30 @@ def check(route_pool,instance,Dis_List): #DP部分
         pre = dp[N + 1][J][K][2]
         KK = dp[N + 1][J][K][3]
         now = N + 1
+        print(f'route{route}')
+        print(f'now:{route[now]},pre:{route[pre]},K:{K},KK:{KK}')
+        ANS_K = []
         while (pre != -1):
             ANS.append(route[pre])
+            ANS_K.append(KK)
             cus = round(Dis_List[route[now]][route[pre]][2] * P_Dis_Charge)
+            print(f"J:{J},K:{K},now:{route[now]},pre:{route[pre]},KK:{KK}")
             J = J + cus - KK  # pre 点对应的剩余电量
             K = KK  # pre 点对应的充电量
             now = pre
             pre = dp[now][J][K][2]  # pre 的前一个点
             KK = dp[now][J][K][3]  # pre 前一个点对应的充电量
+        print("ANS:",ANS)
+        print("ANS_K",ANS_K)
+        charge = Battery_Capacity
+        pos = len(ANS_K) - 1
+        for i in range(0,N + 1):
+            charge -= Dis_List[route[i]][route[i + 1]][2] * P_Dis_Charge
+            print(f"DIS {route[i]} -> {route[i + 1]} {Dis_List[route[i]][route[i + 1]][2] * P_Dis_Charge}")
+            print(f'node:{route[i + 1]},charge:{charge}')
+            if(route[i + 1] in ANS):
+                charge += ANS_K[pos]
+                print(f"add_charge:{ANS_K[pos]}")
+                pos -= 1
 
     return ANS
