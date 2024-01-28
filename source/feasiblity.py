@@ -67,6 +67,7 @@ def check(route_pool,instance,Dis_List): #DP部分
         KK = dp[N + 1][J][K][3]
         now = N + 1
         print(f'route{route}')
+        print(dp[1])
         print(f'now:{route[now]},pre:{route[pre]},K:{K},KK:{KK}')
         ANS_K = []
         while (pre != -1):

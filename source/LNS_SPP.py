@@ -7,10 +7,14 @@ import global_parameter as gp
 instance = {}
 Dis_List = []
 NonImp = 1
+Max_nonimp_LS = 3
+Max_nonimp_Opt = 3
+
 T0 = 187
 q = 0.88
 Remove_Pool = [1,2,3] # 删除操作池
 Insert_Pool = [1] # 插入操作池
+LocalOperator_Pool = [1] # 邻域操作池
 
 Delivery_Capacity = gp.Delivery_Capacity # 送货车最大载货量
 Battery_Capacity = gp.Battery_Capacity # 送货车电池容量
@@ -20,6 +24,8 @@ P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以
 P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
 P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
 
+
+###############################       初始化函数     ##########################################
 
 # 初始化任意两点距离
 # 按照相同点到不同点的距离排序
@@ -42,6 +48,37 @@ def Init(Instance):
     Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     instance = Instance
     Dis_List = Init_Dis()
+
+# 获取初始多车路线
+def Get_Init_Sol():
+    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
+    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
+    route_pool = []  # 存储多车路线的池子
+    bank = [i for i in range(1, instance['N'] + 1)]  # 初始化银行，包含所有顾客编号
+    for i in bank:  # 遍历银行中的每个顾客
+        init_cost = Delivery_Cost + round(2 * Get_Distance(0,i) * P_Dis_Charge * P_Charge_Cost)# 初始化成本为新开一条路线的费用
+        best_cost = init_cost  # 当前最小的“遗憾值”
+        best_route = -1  # 插入的最佳路线
+        best_idx = -1  # 插入的最佳路线的最佳位置
+        for j in range(0,len(route_pool)):  # 遍历当前已有的多车路线
+            cur_idx, cur_cost = Ins_Customer_To_Route(i, route_pool[j])  # 尝试插入顾客到路线中
+            if cur_cost < best_cost:  # 如果插入后的成本更低
+                best_route = j  # 更新最佳路线
+                best_idx = cur_idx  # 更新最佳位置
+                best_cost = cur_cost  # 更新最佳成本
+        if best_cost == init_cost:  # 如果没有找到更好的插入位置
+            route = []  # 创建一个新的路线
+            route.append(0)
+            route.append(i)  # 将当前顾客添加到新路线中
+            route.append(instance['N'] + 1)
+            route_pool.append(route)  # 将新路线添加到多车路线池中
+        else:
+            route_pool[best_route].insert(best_idx, i)  # 在最佳路线的最佳位置插入顾客
+
+    init_cost = Get_Sol_Cost(route_pool)# 更新总成本
+    return route_pool, init_cost  # 返回多车路线池和初始化总成本
+
+###############################       功能类函数     ##########################################
 
 # 返回用户点 a 和 b 之间的距离
 def Get_Distance(a,b):
@@ -151,61 +188,59 @@ def Remove(bank, cur_sol):
         new_sol.append(new_route) # 将新路径添加到新解决方案中
     return new_sol# 返回经过过滤后的新解决方案
 
-# 获取初始多车路线
-def Get_Init_Sol():
-    global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
-    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
-    route_pool = []  # 存储多车路线的池子
-    bank = [i for i in range(1, instance['N'] + 1)]  # 初始化银行，包含所有顾客编号
-    for i in bank:  # 遍历银行中的每个顾客
-        init_cost = Delivery_Cost + round(2 * Get_Distance(0,i) * P_Dis_Charge * P_Charge_Cost)# 初始化成本为新开一条路线的费用
-        best_cost = init_cost  # 当前最小的“遗憾值”
-        best_route = -1  # 插入的最佳路线
-        best_idx = -1  # 插入的最佳路线的最佳位置
-        for j in range(0,len(route_pool)):  # 遍历当前已有的多车路线
-            cur_idx, cur_cost = Ins_Customer_To_Route(i, route_pool[j])  # 尝试插入顾客到路线中
-            if cur_cost < best_cost:  # 如果插入后的成本更低
-                best_route = j  # 更新最佳路线
-                best_idx = cur_idx  # 更新最佳位置
-                best_cost = cur_cost  # 更新最佳成本
-        if best_cost == init_cost:  # 如果没有找到更好的插入位置
-            route = []  # 创建一个新的路线
-            route.append(0)
-            route.append(i)  # 将当前顾客添加到新路线中
-            route.append(instance['N'] + 1)
-            route_pool.append(route)  # 将新路线添加到多车路线池中
-        else:
-            route_pool[best_route].insert(best_idx, i)  # 在最佳路线的最佳位置插入顾客
+#将列表中两坐标之间的元素翻转
+def reverse_elements_between(lst, index1, index2):
+    # 确保 index1 和 index2 在列表范围内
+    if 0 <= index1 < len(lst) and 0 <= index2 < len(lst):
+        # 选择要翻转的部分
+        start_index = min(index1, index2)
+        end_index = max(index1, index2)
+        sublist = lst[start_index:end_index+1]
 
-    init_cost = Get_Sol_Cost(route_pool)# 更新总成本
-    return route_pool, init_cost  # 返回多车路线池和初始化总成本
+        # 翻转部分
+        lst[start_index:end_index+1] = reversed(sublist)
+
+    return lst
+
 
 
 def Distroy_and_Repair(cur_sol,Removal_id,Insert_id):
     global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
     Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     try:
+        # print("D_R")
         new_sol = cur_sol
         bank = []
         cost = float('inf')
+
         # Removal
         if(Removal_id == 1):
+            # print("D_R_B1")
             bank,new_sol = Random_Remove(cur_sol)
+            # print("D_R_1")
         elif(Removal_id == 2):
+            # print("D_R_B2")
             bank,new_sol = Distance_Related_Remove(cur_sol)
+            # print("D_R_2")
         elif(Removal_id == 3):
+            # print("D_R_B3")
             bank,new_sol = String_Remove(cur_sol)
+            # print("D_R_3")
 
         new_sol = [sol for sol in new_sol if(len(sol) != 2)] #有些路线被删除为空，只剩下起点和终点，需要删除这些路线
 
+        # print("D_R_Remove")
         # Insert
         if(Insert_id == 1):
             new_sol,cost = Random_Ins(new_sol,bank)
 
+        # print("D_R_INsert")
         return new_sol,cost
     except Exception as e:
         print(f"From Distroy_and_Repair get an error: {e}")
 
+
+###############################       删除操作符     ##########################################
 
 def Random_Remove(cur_sol): #Rem-1
     global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
@@ -242,6 +277,8 @@ def String_Remove(cur_sol): #Rem-3
     global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
     Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     bank = []
+    # print("Strint_Remove",len(cur_sol))
+
     for sol in cur_sol:
         Len = len(sol) - 2
         start = random.randint(1,Len)
@@ -249,6 +286,7 @@ def String_Remove(cur_sol): #Rem-3
         random_len = random.randint(0,Del_len)
         for i in range(start,start + random_len):
             bank.append(sol[i])
+
     new_sol = Remove(bank,cur_sol)
     return bank,new_sol
 
@@ -312,6 +350,51 @@ def Random_Ins(cur_sol,bank): #Ins-1
         print(f"From Random_Ins get an error: {e}")
 
 
+###############################       邻域操作符     ##########################################
+###记得加checktime
+def opt2(new_sol):
+    Count = 1
+    # print("OPT_before",new_sol,'\n',Get_Sol_Cost(new_sol))
+    while(Count < Max_nonimp_Opt):
+        # 随机选取一条路径处理
+        route_idx = random.choice(range(len(new_sol)))
+        route = copy.deepcopy(new_sol[route_idx])
+        route_cost = Get_Route_Cost(route)
+
+        # 路径中少于两个点
+        if(len(route) < 4):
+            Count = Count + 1
+            continue
+
+        #随机选取路径中的两点，翻转其中间的元素
+        index1,index2 = random.sample(range(1,len(route) - 1),2) # 随机选取两个坐标
+        tmp_route = reverse_elements_between(route,index1,index2)
+        tmp_cost = Get_Route_Cost(tmp_route)
+
+        if(len(check_time(tmp_route)) == 0):
+            continue
+
+        #检查是否代价更小
+        if(tmp_cost < route_cost):
+            new_sol[route_idx] = tmp_route
+            # print(tmp_cost,route_cost,Get_Sol_Cost(new_sol))
+            Count = 1
+        else:
+            Count = Count + 1
+    # print("OPT_after", new_sol,'\n',Get_Sol_Cost(new_sol))
+    return new_sol
+
+def Local_Operate(new_sol,new_cost,Operator_id):
+    if(Operator_id == 1):
+        return opt2(new_sol)
+
+def LS(new_sol,new_cost):
+    Operator_id = random.choice(LocalOperator_Pool)
+    new_sol = Local_Operate(new_sol,new_cost,Operator_id)
+    new_cost = Get_Sol_Cost(new_sol)
+    return new_sol,new_cost
+
+
 def LNS(Instance):
     global instance,Dis_List,NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
     Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
@@ -328,6 +411,22 @@ def LNS(Instance):
         Reinsert_id = random.choice(Insert_Pool) # 挑选插入操作
         new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
 
+        # print("new_before_LS",new_cost)
+        #LS
+        if(new_cost < best_cost):
+            nonimp = 1
+            while nonimp < Max_nonimp_LS:
+                tmp_sol ,tmp_cost = LS(new_sol,new_cost)
+                if(tmp_cost < new_cost):
+                    print(tmp_cost, new_cost)
+                    new_cost = tmp_cost
+                    new_sol = tmp_sol
+
+                    nonimp = 1
+                else:
+                    nonimp = nonimp + 1
+
+        # print("new_after_LS", new_cost)
         T *= q #降温
         diff = new_cost - cur_cost
         if diff < 0:# 操作后结果变优秀了
@@ -348,6 +447,8 @@ def LNS(Instance):
             NonImp += 1
         Terminal += 1
     time_window = []
+    print("best_cost",best_cost)
+    print("best_sol",best_sol)
     for route in best_sol:
         time_window.append(check_time(route))
     return best_sol,best_cost,Dis_List,time_window
