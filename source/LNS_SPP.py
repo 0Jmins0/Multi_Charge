@@ -448,7 +448,6 @@ def LNS(Instance):
         Terminal += 1
     time_window = []
     print("best_cost",best_cost)
-    print("best_sol",best_sol)
     for route in best_sol:
         time_window.append(check_time(route))
     return best_sol,best_cost,Dis_List,time_window
