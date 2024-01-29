@@ -1,3 +1,5 @@
+import copy
+
 import global_parameter as gp
 import numpy as np
 
@@ -8,9 +10,64 @@ P_Dis_Charge = gp.P_Dis_Charge # 距离和电量的系数，距离乘以系数�
 P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以系数为花费
 P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
 P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
+P_Charge_Time =  gp.P_Charge_Time # 充电量和时间的关系系数，充电量乘以系数为时间
 
 
-def check(route_pool,instance,Dis_List): #DP部分
+def check(route_pool,instance,Dis_List,Time_Window):
+    ANS = []
+
+    for route in route_pool:
+        N = len(route)
+        dp = np.zeros((N + 2,Battery_Capacity + 1,2)).tolist()
+        Pre_Node = [[] for _ in range(N)]
+        Pre_Node[0].append(0)
+
+        for i in range(0,N + 1):
+            for j in range(0,Battery_Capacity + 1):
+                dp[i][j][0] = float('inf')
+                dp[i][j][1] = -1
+
+        dp[0][Battery_Capacity][0] = 0
+        dp[0][Battery_Capacity][1] = 0
+
+        for i in range(1,N):
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+
+            # 不充电
+            for j in range(0,Battery_Capacity):
+                if(j + charge <= Battery_Capacity):
+                    dp[i][j][0] = dp[i - 1][j + charge][0]
+                    dp[i][j][1] = dp[i - 1][j + charge][1]
+
+            # 充电
+            for j in range(0,Battery_Capacity):
+                pre = dp[i][j][1]
+                if(pre == -1):
+                    continue
+                disj = Dis_List[route[i]][route[pre]][2]
+                chargej = disj * P_Dis_Charge
+                if(dp[i][Battery_Capacity][0] > dp[i][j][0] + disj):
+                    dp[i][Battery_Capacity][0] = dp[i][j][0] + disj
+                    Pre_Node[i] = copy.deepcopy(Pre_Node[dp[i][j][1]])
+                    Pre_Node[i].append(i)
+
+            dp[i][Battery_Capacity][1] = i
+
+        for i in range(N):
+            print(i + 1,":",Pre_Node[i])
+
+        # 回溯
+        for node in Pre_Node[N - 1]:
+            if(node != 0 and node != N - 1):
+                ANS.append(route[node])
+
+    return ANS
+
+
+
+
+def checkk(route_pool,instance,Dis_List): #DP部分
     ANS = []
     for route in route_pool:
         N = len(route) - 2

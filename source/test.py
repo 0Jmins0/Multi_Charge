@@ -10,11 +10,11 @@ def main(instance):
     print("time_window:",time_window)
 
     # 获得充电车选择的充电点
-    # select_bank = check(init_sol,instance,Dis_List)
-    # print("charge node:",select_bank)
+    select_bank = check(init_sol,instance,Dis_List,time_window)
+    print("charge node:",select_bank)
     #
     # # 可视化
-    # Draw(instance,init_sol,select_bank,time_window,Dis_List)
+    Draw(instance,init_sol,select_bank,time_window,Dis_List)
 
     # return select_bank
 
