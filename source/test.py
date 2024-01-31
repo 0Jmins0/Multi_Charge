@@ -2,7 +2,7 @@ import random
 from read_data import Read_Data
 from LNS_SPP import LNS
 from feasiblity import check
-from draw import Draw
+from draw import Draw,Draw2
 def main(instance):
     # 获得送货车路线池
     init_sol,init_cost ,Dis_List,time_window= LNS(instance)
@@ -14,8 +14,9 @@ def main(instance):
     print("charge node:",select_bank)
     #
     # # 可视化
-    Draw(instance,init_sol,select_bank,time_window,Dis_List)
+    # Draw(instance,init_sol,select_bank,time_window,Dis_List)
 
+    Draw2(instance, init_sol, select_bank, time_window, Dis_List)
     # return select_bank
 
 def evaluate(a,k):

@@ -41,11 +41,63 @@ def Draw(instance,route_pool,charge_node,time_window,Dis_List):
             #画点
             if(i != 0):
                 plt.scatter(x1, y1, color = 'blue',s = 100, marker='o')
-                #点上的注释
-                plt.annotate(f"{route[i]}: ({time_window[number][i][0]}, {time_window[number][i][1]})", \
+                #点上的注释 : ({time_window[number][i][0]}, {time_window[number][i][1]})
+                plt.annotate(f"{route[i]}", \
                              xy = (x1, y1), textcoords="offset points", xytext=(1, 1), ha='right')
         number = number + 1
     # 充电点
     for node in charge_node:
          plt.scatter(X[node], Y[node], s=100,color = 'yellow', marker='o')
     plt.show()
+
+
+import matplotlib.pyplot as plt
+
+def Draw2(instance, route_pool, charge_node, time_window, Dis_List):
+    # 获取Matplotlib默认的颜色循环
+    color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    X = instance['x']
+    Y = instance['y']
+
+    for number, route in enumerate(route_pool):
+        # 创建新的图
+        plt.figure()
+
+        # 仓库
+        plt.scatter(X[0], Y[0], marker='*', color='red', s=200, label='Star Point')
+
+        # 路线和客户点
+        Len = len(route)
+        for i in range(0, Len - 1):
+            x1 = X[route[i]]
+            x2 = X[route[i + 1]]
+            y1 = Y[route[i]]
+            y2 = Y[route[i + 1]]
+            # 路线
+            plt.plot([x1, x2], [y1, y2], color=color_cycle[number])
+
+            # 线上的注释
+            x_mid = (x1 + x2) / 2
+            y_mid = (y1 + y2) / 2
+            distance = round(Dis_List[route[i]][route[i + 1]][2] * P_Delivery_Speed)
+            plt.annotate(f"time {route[i]}-{route[i + 1]}: {distance:.2f}", (x_mid, y_mid), textcoords="offset points",
+                         xytext=(0, 5), ha='center')
+
+            # 画点
+            if (i != 0):
+                plt.scatter(x1, y1, color='blue', s=100, marker='o')
+                # 点上的注释 : ({time_window[number][i][0]}, {time_window[number][i][1]})
+                plt.annotate(f"{route[i]}", \
+                             xy=(x1, y1), textcoords="offset points", xytext=(1, 1), ha='right')
+
+        # 充电点
+        for node in charge_node:
+            if(node in route):
+                plt.scatter(X[node], Y[node], s=100, color='yellow', marker='o')
+
+        # 显示当前图
+        plt.show()
+
+# Example usage:
+# Draw(instance, route_pool, charge_node, time_window, Dis_List)

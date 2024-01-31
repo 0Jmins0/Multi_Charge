@@ -10,7 +10,7 @@ P_Dis_Charge = gp.P_Dis_Charge # 距离和电量的系数，距离乘以系数�
 P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以系数为花费
 P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
 P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
-P_Charge_Time =  gp.P_Charge_Time # 充电量和时间的关系系数，充电量乘以系数为时间
+P_Charge_Time =  gp.P_Charge_Time # 充电量和时间的关系系数，时间乘以系数为充电量
 
 
 def check(route_pool,instance,Dis_List,Time_Window):
@@ -55,7 +55,7 @@ def check(route_pool,instance,Dis_List,Time_Window):
             dp[i][Battery_Capacity][1] = i
 
         for i in range(N):
-            print(i + 1,":",Pre_Node[i])
+            print(i,":",Pre_Node[i])
 
         # 回溯
         for node in Pre_Node[N - 1]:
@@ -65,6 +65,70 @@ def check(route_pool,instance,Dis_List,Time_Window):
     return ANS
 
 
+
+
+def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
+    ANS = []
+
+    for index,route in enumerate(route_pool):
+        N = len(route)
+        dp = np.zeros((N + 2,Battery_Capacity + 1,5)).tolist()
+        Pre_Node = [[] for _ in range(N)]
+        Pre_Node[0].append(0)
+
+        for i in range(0,N + 1):
+            for j in range(0,Battery_Capacity + 1):
+                dp[i][j][0] = float('inf')
+                dp[i][j][1] = -1
+                dp[i][j][2] = Time_Window[index][i][0] # 点 i 的最早到达时间（可能还不能开始服务）,但可以开始充电
+                dp[i][j][3] = Time_Window[index][i][1] + instance['s'][route[i]] # 点 i 的最晚离开的时间
+                dp[i][j][4] = 0 # 充电时间
+
+        dp[0][Battery_Capacity][0] = 0
+        dp[0][Battery_Capacity][1] = 0
+
+        for i in range(1,N):
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+            time  = dis * P_Delivery_Speed
+
+            # 不充电
+            for j in range(0,Battery_Capacity):
+                if(j + charge <= Battery_Capacity):
+                    dp[i][j][0] = dp[i - 1][j + charge][0]
+                    dp[i][j][1] = dp[i - 1][j + charge][1]
+
+                    early_charge_finish = dp[i - 1][j + charge][2] + dp[i - 1][j + charge][4]
+                    early_serve_finish = max(dp[i - 1][j + charge][2],instance['tl'][route[i]]) + instance['s'][route[i]]
+
+                    dp[i][j][2] = max(early_charge_finish,early_serve_finish) + time
+
+
+            # 充电
+            for j in range(Battery_Capacity - 1,0,-1):
+                pre = dp[i][j][1]
+
+
+                if(pre == -1):
+                    continue
+                disj = Dis_List[route[i]][route[pre]][2]
+                chargej = disj * P_Dis_Charge
+                if(dp[i][Battery_Capacity][0] > dp[i][j][0] + disj):
+                    dp[i][Battery_Capacity][0] = dp[i][j][0] + disj
+                    Pre_Node[i] = copy.deepcopy(Pre_Node[dp[i][j][1]])
+                    Pre_Node[i].append(i)
+
+            dp[i][Battery_Capacity][1] = i
+
+        for i in range(N):
+            print(i + 1,":",Pre_Node[i])
+
+        # 回溯
+        for node in Pre_Node[N - 1]:
+            if(node != 0 and node != N - 1):
+                ANS.append(route[node])
+
+    return ANS
 
 
 def checkk(route_pool,instance,Dis_List): #DP部分

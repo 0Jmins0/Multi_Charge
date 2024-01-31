@@ -58,7 +58,7 @@ def gen(I):
         while (ok == 0 and i != 0 and i != n + 1):
             # 时间窗
             tl = np.random.randint(0, 840 - s)
-            tr = np.random.randint(tl + s, 840)
+            tr = np.random.randint(tl, 840 - s)
             if(Get_Time_OK(data[0][1],data[0][2],x,y,tl,tr,s)):
                 ok = 1
         # 载货量
@@ -86,5 +86,5 @@ def gen(I):
         writer.writerow(header)
         for p in data:
             writer.writerow(p)
-for i in range(0,51):
+for i in range(1,51):
     gen(i)
