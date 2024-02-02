@@ -54,8 +54,8 @@ def check(route_pool,instance,Dis_List,Time_Window):
 
             dp[i][Battery_Capacity][1] = i
 
-        for i in range(N):
-            print(i,":",Pre_Node[i])
+        # for i in range(N):
+        #     print(i,":",Pre_Node[i])
 
         # 回溯
         for node in Pre_Node[N - 1]:
@@ -120,8 +120,8 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
 
             dp[i][Battery_Capacity][1] = i
 
-        for i in range(N):
-            print(i + 1,":",Pre_Node[i])
+        # for i in range(N):
+        #     print(i + 1,":",Pre_Node[i])
 
         # 回溯
         for node in Pre_Node[N - 1]:
