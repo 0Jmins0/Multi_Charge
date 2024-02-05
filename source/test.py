@@ -1,7 +1,7 @@
 import random
 from read_data import Read_Data
 from LNS_SPP import LNS
-from feasiblity import check
+from feasiblity import check,check_with_regular_time,check_with_timewindow
 from draw import Draw,Draw2
 def main(instance):
     # 获得送货车路线池
@@ -10,8 +10,16 @@ def main(instance):
     print("time_window:",time_window)
 
     # 获得充电车选择的充电点
-    select_bank = check(init_sol,instance,Dis_List,time_window)
-    print("charge node:",select_bank)
+    # select_bank = check(init_sol,instance,Dis_List,time_window)
+
+    select_bank = check_with_timewindow(init_sol, instance, Dis_List, time_window)
+
+    print("charge node_time_window:", select_bank)
+    # init_sol = [[0,1,2,3,4,5]]
+
+    select_bank = check_with_regular_time(init_sol, instance, Dis_List, time_window)
+
+    print("charge node_regular_time:",select_bank)
     #
     # # 可视化
     # Draw(instance,init_sol,select_bank,time_window,Dis_List)
