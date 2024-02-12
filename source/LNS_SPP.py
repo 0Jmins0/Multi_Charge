@@ -4,7 +4,7 @@ import copy
 import numpy as np
 import global_parameter as gp
 import local_search as ls
-from function import Ins_Customer_To_Route, Remove, Get_Sol_Cost, check_time
+from function import Ins_Customer_To_Route, Remove, Get_Sol_Cost, check_time,Get_Route_Cost
 
 NonImp = 1
 Max_nonimp_Opt = 2
@@ -184,7 +184,29 @@ def String_Remove(cur_sol): #Rem-3
 #于每个客户，计算如果将该客户从其当前路线中移除，会导致总成本发生多大的变化。
 #通常包括了行驶距离、时间窗口违规、容量违规等因素。对于每个客户，记录下其对总成本的影响。
 def Worst_removal(instance,NonImp,cur_sol):
-    return
+    bank = []
+    for route in cur_sol:
+        Ans = []
+        if(len(route) <= NonImp):
+            continue
+        for node in route:
+            if(node == 0 or node == len(instance) - 1):
+                continue
+            tmp = copy.deepcopy(route)
+            tmp.remove(node)
+            tmp_cost = Get_Route_Cost(tmp,instance,Dis_List)
+            tmp_list = []
+            tmp_list.append(node)
+            tmp_list.append(tmp_cost)
+            Ans.append(tmp_list)
+        Ans.sort(key=lambda x: x[1],reverse=True)
+        tmp_bank = []
+        for i in range(NonImp):
+            tmp_bank.append(Ans[0])
+            bank.append(Ans[0])
+        cur_sol = Remove(tmp_bank,cur_sol)
+
+    return bank,cur_sol
 
 #对于每个客户，计算其最早出发时间和最晚服务时间窗口之间的差异。
 #从上一步骤计算出的差异中，选择那些差异显著的客户，即那些最早出发时间和最晚服务时间窗口之间的差异较大的客户。

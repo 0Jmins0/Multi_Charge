@@ -68,6 +68,10 @@ def check(route_pool,instance,Dis_List,Time_Window):
 def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
     ANS = []
 
+    print(Dis_List[0][25][2] + Dis_List[25][27][2])
+    print(Dis_List[0][13][2] + Dis_List[13][27][2])
+    print(Dis_List[0][13][2])
+    print(Dis_List[25][27][2])
     for index,route in enumerate(route_pool):
         N = len(route)
         dp = np.zeros((N + 2,Battery_Capacity + 1,Battery_Capacity + 1,4)).tolist()
@@ -94,22 +98,35 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
             charge = dis * P_Dis_Charge
             time = dis * P_Delivery_Speed
 
-            time_L = Time_Window[index][i][0] + instance['s'][route[i]] # 能够，最早离开旳时间
+            # index = 0
+
+            # print('a',instance['s'][route[i]])
+            # print('b', Time_Window[index][i][1])
+
+            # time_L = Time_Window[index][i][0] + instance['s'][route[i]] # 能够，最早离开旳时间
             time_R = Time_Window[index][i][1] + instance['s'][route[i]] # 必须，最晚离开的时间
 
             # 不充电
             for j in range(0,Battery_Capacity + 1):
                 if(j + charge <= Battery_Capacity):
-                    # dp[i][j][0][0] = dp[i - 1][j + charge][0][0]
-                    # dp[i][j][0][1] = dp[i - 1][j + charge][0][1]
                     for k in range(0,Battery_Capacity + 1):
                         if(k <= j + charge):
-                            if(dp[i][j][0][0] > dp[i - 1][j + charge][k][0] and dp[i - 1][j + charge][k][3] + time + instance['s'][route[i]] < time_R):
-                                dp[i][j][0][0] = dp[i - 1][j + charge][k][0]
-                                dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
-                                dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time # 到达时间
-                                dp[i][j][0][3] = max(dp[i][j][0][2],instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
-                                Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+                            if(dp[i][j][0][0] >= dp[i - 1][j + charge][k][0] and dp[i - 1][j + charge][k][3] + time + instance['s'][route[i]] <= time_R):
+                                if(dp[i][j][0][0] > dp[i - 1][j + charge][k][0]):
+                                    dp[i][j][0][0] = dp[i - 1][j + charge][k][0]
+                                    dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                    dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time # 到达时间
+                                    dp[i][j][0][3] = max(dp[i][j][0][2],instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+                                else:# 代价相等，取离开时间更早的，
+                                    tmp_3 = max(dp[i - 1][j + charge][k][3] + time,instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    if(dp[i][j][0][3] > tmp_3):
+                                        dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                        dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time  # 到达时间
+                                        dp[i][j][0][3] = max(dp[i][j][0][2], instance['tl'][route[i]]) + instance['s'][
+                                            route[i]]  # 离开时间
+                                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+
 
                 # print('i:',i," j:",j," prenode:",Pre_Node[i][j][0])
                     # early_charge_finish = dp[i - 1][j + charge][2] + dp[i - 1][j + charge][4]
@@ -117,12 +134,14 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
 
             # 充电
             for j in range(0,Battery_Capacity + 1):
+                k1 = Battery_Capacity - j
+                k2 = dp[i][j][0][2]
                 for k in range(1, j + 1):
                     charge_time = k * P_Charge_Time
                     pre = dp[i][j - k][0][1]
                     if (pre == -1):
                         continue
-                    dp[i][j][k][0] = dp[i][j - k][0][0] + Dis_List[route[pre]][route[i]][2]
+                    dp[i][j][k][0] = dp[i][j - k][0][0] + Dis_List[route[i]][route[pre]][2]
                     dp[i][j][k][1] = i
                     dp[i][j][k][2] = dp[i][j - k][0][2]
                     if(dp[i][j][k][2] < instance['tl'][route[i]]): # 如果到达时间小于最早服务时间，可以先开始充电，可边服务边充电
@@ -140,6 +159,13 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
         Min_dis = float('inf')
         Min_disj = -1
         Min_disk = -1
+        print(dp[1][12][10])
+        print(dp[2][10][0])
+        print(dp[2][12][12])
+        print(dp[3][4][0])
+        print(dp[3][6][0])
+        print(dp[3][12][6])
+        print(Pre_Node[3][12][8])
 
         for j in range(0,Battery_Capacity + 1):
             for k in range(1,Battery_Capacity + 1):
@@ -147,10 +173,13 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
                     Min_dis = dp[N - 1][j][k][0]
                     Min_disj = j
                     Min_disk = k
-        # print("Min_dis",Min_dis)
+        print("Min_dis:",Min_dis," Min_disj:",Min_disj," Min_disk:",Min_disk)
         # print("Min_disj",Min_disj)
         # print("Min_disk",Min_disk)
         # print(Pre_Node[N - 1][Min_disj][Min_disk])
+
+        # for i ,j in [1, 3, 5, 8, 10, 12],[]:
+        #     print(i, dp[i][min(f[i], 12)][1])
 
         # print(Pre_Node)
 
@@ -167,6 +196,7 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
 
 def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
 
+    print(Dis_List[0][25][2] + Dis_List[25][27][2])
     ANS = []
     for route in route_pool:
         N = len(route)
@@ -180,7 +210,8 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
             begin = end + Dis_List[route[i]][route[i - 1]][2] * P_Delivery_Speed
             end = max(instance['tl'][route[i]] + instance['s'][route[i]],begin + instance['s'][route[i]])
             f[i] = (end - begin) * P_Charge_Time
-
+            # print("i:" ,i, begin,end,f[i])
+        # f[N - 1] = 1
         # print('f',f)
         # dp[i][j][0/1][0/1]
         # 离开第 i 个点，有 j 的电量时，（不充/充电）时的（消费/上一个充电的点）
@@ -231,7 +262,7 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
                 disj = Dis_List[route[i]][route[pre]][2]
                 chargej = disj * P_Dis_Charge
 
-                if(j <= Battery_Capacity - f[i]):
+                if(j <= Battery_Capacity - f[i]): # 不会充溢出
                     dp[i][j + f[i]][1][0] = dp[i][j][0][0] + disj
                     dp[i][j + f[i]][1][1] = i
                     Pre_Node[i][j + f[i]][1] = copy.deepcopy(Pre_Node[i][j][0])
@@ -240,7 +271,7 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
                 else:
                     dp[i][Battery_Capacity][1][1] = i
                     if (dp[i][Battery_Capacity][1][0] > dp[i][j][0][0] + disj):
-                        dp[i][Battery_Capacity][1][0] = min(dp[i][Battery_Capacity][1][0],dp[i][j][0][0] + disj)
+                        dp[i][Battery_Capacity][1][0] =dp[i][j][0][0] + disj
                         Pre_Node[i][Battery_Capacity][1] = copy.deepcopy(Pre_Node[i][j][0])
                         Pre_Node[i][Battery_Capacity][1].append(i)
                 # if(i == N - 1 and Min_dis > dp[i][min(j + f[i],Battery_Capacity)][1][0]):
@@ -250,6 +281,10 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
         Min_disj = -1
         Min_disk = -1
 
+        print(dp[1][12][1])
+        print(dp[2][10][0])
+        print(dp[3][12][1])
+
         for j in range(f[N - 1],Battery_Capacity + 1):
             for k in range(1,2):
                 if(Min_dis > dp[N - 1][j][k][0]):
@@ -257,14 +292,16 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
                     Min_disj = j
                     Min_disk = k
 
-        # print("Min_dis",Min_dis)
+        print("Min_dis:",Min_dis," Min_disj:",Min_disj," Min_disk:",Min_disk)
         # print("Min_disj",Min_disj)
         # print("Min_disk",Min_disk)
-        # print(Pre_Node[N - 1][Min_disj][Min_disk])
+        print(Pre_Node[N - 1][Min_disj][Min_disk])
+        for i in [1, 3, 5, 8, 10, 12]:
+            print(i,dp[i][min(f[i],12)][1])
+        print("12",dp[12][4][1])
 
-
-        # for i in range(N):
-        #     print(i,":",Pre_Node[i])
+        for i in range(N):
+            print(i,":",f[i])
 
         # 回溯
         for node in Pre_Node[N - 1][Min_disj][Min_disk]:
@@ -272,3 +309,10 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
                 ANS.append(route[node])
 
     return ANS
+
+# 21 33 40 45 47
+#  [0, 18, 34, 11, 28, 20, 26, 41],
+# [[0, 444], [1, 445], [444, 466], [491, 491], [507, 698], [530, 721], [651, 745], [683, 840]]
+
+# [0, 25, 13, 27, 8, 7, 5, 2, 10, 18, 15, 16, 38]
+# [[0, 291], [1, 292], [129, 317], [293, 347], [317, 423], [386, 520], [506, 541], [525, 560], [574, 591], [599, 616], [626, 634], [658, 840]]
