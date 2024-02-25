@@ -68,10 +68,10 @@ def check(route_pool,instance,Dis_List,Time_Window):
 def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
     ANS = []
 
-    print(Dis_List[0][25][2] + Dis_List[25][27][2])
-    print(Dis_List[0][13][2] + Dis_List[13][27][2])
-    print(Dis_List[0][13][2])
-    print(Dis_List[25][27][2])
+    # print(Dis_List[0][25][2] + Dis_List[25][27][2])
+    # print(Dis_List[0][13][2] + Dis_List[13][27][2])
+    # print(Dis_List[0][13][2])
+    # print(Dis_List[25][27][2])
     for index,route in enumerate(route_pool):
         N = len(route)
         dp = np.zeros((N + 2,Battery_Capacity + 1,Battery_Capacity + 1,4)).tolist()
@@ -196,7 +196,7 @@ def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
 
 def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
 
-    print(Dis_List[0][25][2] + Dis_List[25][27][2])
+    # print(Dis_List[0][25][2] + Dis_List[25][27][2])
     ANS = []
     for route in route_pool:
         N = len(route)
@@ -296,12 +296,12 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
         # print("Min_disj",Min_disj)
         # print("Min_disk",Min_disk)
         print(Pre_Node[N - 1][Min_disj][Min_disk])
-        for i in [1, 3, 5, 8, 10, 12]:
-            print(i,dp[i][min(f[i],12)][1])
-        print("12",dp[12][4][1])
+        # for i in [1, 3, 5, 8, 10, 12]:
+        #     print(i,dp[i][min(f[i],12)][1])
+        # print("12",dp[12][4][1])
 
-        for i in range(N):
-            print(i,":",f[i])
+        # for i in range(N):
+        #     print(i,":",f[i])
 
         # 回溯
         for node in Pre_Node[N - 1][Min_disj][Min_disk]:

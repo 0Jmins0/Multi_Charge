@@ -12,12 +12,12 @@ def main(instance):
     # 获得充电车选择的充电点
     # select_bank = check(init_sol,instance,Dis_List,time_window)
 
-    init_sol = [[0, 25, 13, 27, 8, 7, 5, 2, 10, 18, 15, 16, 38]]
-    time_window = [[[0, 290], [10, 300], [198, 329], [262, 350], [280, 368], [308, 396], [335, 423], [352, 474], [455, 501], [478, 754], [741, 790], [758, 824], [822, 840]]]
+    # init_sol = [[0, 25, 13, 27, 8, 7, 5, 2, 10, 18, 15, 16, 38]]
+    # time_window = [[[0, 290], [10, 300], [198, 329], [262, 350], [280, 368], [308, 396], [335, 423], [352, 474], [455, 501], [478, 754], [741, 790], [758, 824], [822, 840]]]
 
-    select_bank = check_with_timewindow(init_sol, instance, Dis_List, time_window)
+    # select_bank = check_with_timewindow(init_sol, instance, Dis_List, time_window)
 
-    print("charge node_time_window:", select_bank)
+    # print("charge node_time_window:", select_bank)
     # init_sol = [[0,1,2,3,4,5]]
 
     select_bank = check_with_regular_time(init_sol, instance, Dis_List, time_window)
