@@ -2,25 +2,25 @@ import copy
 import math
 import global_parameter as gp
 
-Remove_Pool = gp.Remove_Pool # 删除操作池
-Insert_Pool = gp.Insert_Pool # 插入操作池
-LocalOperator_Pool = gp.LocalOperator_Pool # 邻域操作池
+Remove_Pool = gp.Remove_Pool  # 删除操作池
+Insert_Pool = gp.Insert_Pool  # 插入操作池
+LocalOperator_Pool = gp.LocalOperator_Pool  # 邻域操作池
 
-Delivery_Capacity = gp.Delivery_Capacity # 送货车最大载货量
-Battery_Capacity = gp.Battery_Capacity # 送货车电池容量
-Delivery_Cost = gp.Delivery_Cost # 每辆送货车的价格
-P_Dis_Charge = gp.P_Dis_Charge # 距离和电量的系数，距离乘以系数为耗电量
-P_Charge_Cost = gp.P_Charge_Cost # 耗电量和花费的系数，耗电量乘以系数为花费
-P_Delivery_Speed = gp.P_Delivery_Speed # 送货车距离和时间的系数，距离乘以系数为时间
-P_Charge_Speed = gp.P_Charge_Speed # 充电车距离和时间的系数，距离乘以系数为时间
+Delivery_Capacity = gp.Delivery_Capacity  # 送货车最大载货量
+Battery_Capacity = gp.Battery_Capacity  # 送货车电池容量
+Delivery_Cost = gp.Delivery_Cost  # 每辆送货车的价格
+P_Dis_Charge = gp.P_Dis_Charge  # 距离和电量的系数，距离乘以系数为耗电量
+P_Charge_Cost = gp.P_Charge_Cost  # 耗电量和花费的系数，耗电量乘以系数为花费
+P_Delivery_Speed = gp.P_Delivery_Speed  # 送货车距离和时间的系数，距离乘以系数为时间
+P_Charge_Speed = gp.P_Charge_Speed  # 充电车距离和时间的系数，距离乘以系数为时间
 Lambda_Value = gp.Lambda_Value
 
 
 
 # 查询一条路径的花费,不算购车花费
-def Get_Route_Cost(route,instance,Dis_List):
-    global NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
-    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
+def Get_Route_Cost(route, instance, Dis_List):
+    global Delivery_Capacity, Battery_Capacity, \
+    Delivery_Cost, P_Dis_Charge, P_Charge_Cost, P_Delivery_Speed, P_Charge_Speed
     Len = len(route)
     dis = 0
     for i in range(0,Len - 1):
@@ -42,8 +42,8 @@ def Get_Sol_Cost(sol,instance,Dis_List):
 
 #检查路线route是否符合时间窗 返回一个点最早可以开始服务旳时间和最晚必须开始服务的时间
 def check_time(route,instance,Dis_List): # 检查时间框可行性
-    global NonImp,T0,q,Delivery_Capacity,Battery_Capacity,\
-    Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
+    global NonImp,T0,q,Delivery_Capacity,Battery_Capacity, \
+        Delivery_Cost,P_Dis_Charge,P_Charge_Cost,P_Delivery_Speed,P_Charge_Speed
     Len = len(route)
     time_window = [[0, 840] for _ in range(Len)]
     last_arr = 840 # 最晚到达

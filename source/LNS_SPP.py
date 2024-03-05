@@ -116,6 +116,8 @@ def Distroy_and_Repair(cur_sol,Removal_id,Insert_id):
             # print("D_R_B3")
             bank,new_sol = String_Remove(cur_sol)
             # print("D_R_3")
+        elif(Removal_id == 4):
+            bank,new_sol = Worst_Removal(instance,NonImp,cur_sol)
 
         new_sol = [sol for sol in new_sol if(len(sol) != 2)] #有些路线被删除为空，只剩下起点和终点，需要删除这些路线
 
@@ -183,9 +185,10 @@ def String_Remove(cur_sol): #Rem-3
 
 #于每个客户，计算如果将该客户从其当前路线中移除，会导致总成本发生多大的变化。
 #通常包括了行驶距离、时间窗口违规、容量违规等因素。对于每个客户，记录下其对总成本的影响。
-def Worst_removal(instance,NonImp,cur_sol):
+def Worst_Removal(instance,NonImp,cur_sol):
     bank = []
     for route in cur_sol:
+        print(bank)
         Ans = []
         if(len(route) <= NonImp):
             continue
@@ -202,11 +205,15 @@ def Worst_removal(instance,NonImp,cur_sol):
         Ans.sort(key=lambda x: x[1],reverse=True)
         tmp_bank = []
         for i in range(NonImp):
-            tmp_bank.append(Ans[0])
-            bank.append(Ans[0])
+            tmp_bank.append(Ans[0][0])
+            bank.append(Ans[0][0])
         cur_sol = Remove(tmp_bank,cur_sol)
 
     return bank,cur_sol
+
+#移除对路径持续时间影响最大的点
+def Worst_Dur_Removal(instance,NonImp,cur_sol):
+
 
 #对于每个客户，计算其最早出发时间和最晚服务时间窗口之间的差异。
 #从上一步骤计算出的差异中，选择那些差异显著的客户，即那些最早出发时间和最晚服务时间窗口之间的差异较大的客户。
@@ -283,7 +290,7 @@ def LNS(Instance):
     while Terminal < MaxI:
         Removal_id = random.choice(Remove_Pool) # 挑选删除操作
         Reinsert_id = random.choice(Insert_Pool) # 挑选插入操作
-        new_sol , new_cost= Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
+        new_sol, new_cost = Distroy_and_Repair(cur_sol,Removal_id,Reinsert_id) #重构解
         # print("T",len(new_sol))
         # print(new_sol)
         # LS

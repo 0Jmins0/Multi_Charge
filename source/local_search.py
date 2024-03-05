@@ -109,7 +109,7 @@ def opt2_exchange_mul(new_sol,instance,Dis_List):
     # Opt-2交换多次的局部搜索函数
 
     num_of_route = len(new_sol)
-    if num_of_route  < 2:
+    if num_of_route < 2:
         return new_sol
 
     for index1 in range(num_of_route):
@@ -332,17 +332,17 @@ def LS(new_sol,instance,Dis_List):
     # print("befor_LS",new_sol)
     begin_time = time.time()
     end_time = begin_time
-    tmp_sol = new_sol
     cnt = 0
     pos = 0
     # print("LS",len(new_sol))
     while(end_time - begin_time < Max_Time and cnt != len(LocalOperator_Pool) - 1):
         # print("befor",new_sol)
         # print(LocalOperator_Pool[pos])
+        tmp_sol = new_sol
         new_sol = Local_Operate(new_sol,LocalOperator_Pool[pos],instance,Dis_List)
         # print("after",new_sol)
         # print(LocalOperator_Pool[pos],len(new_sol))
-        if(tmp_sol != new_sol):
+        if(tmp_sol != new_sol): # 说明更新为更好的了
             cnt = 0
         else:
             cnt = cnt + 1

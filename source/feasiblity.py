@@ -65,135 +65,6 @@ def check(route_pool,instance,Dis_List,Time_Window):
     return ANS
 
 
-def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
-    ANS = []
-
-    # print(Dis_List[0][25][2] + Dis_List[25][27][2])
-    # print(Dis_List[0][13][2] + Dis_List[13][27][2])
-    # print(Dis_List[0][13][2])
-    # print(Dis_List[25][27][2])
-    for index,route in enumerate(route_pool):
-        N = len(route)
-        dp = np.zeros((N + 2,Battery_Capacity + 1,Battery_Capacity + 1,4)).tolist()
-
-        Pre_Node = [[[[] for _ in range(Battery_Capacity + 1)] for _ in range(Battery_Capacity + 1)] for _ in range(N + 1)]
-
-
-        for i in range(0,N + 1):
-            for j in range(0,Battery_Capacity + 1):
-                for k in range(0,Battery_Capacity + 1):
-                    dp[i][j][k][0] = float('inf')
-                    dp[i][j][k][1] = -1
-                    dp[i][j][k][2] = 0
-                    dp[i][j][k][3] = 0
-
-        dp[0][Battery_Capacity][Battery_Capacity][0] = 0
-        dp[0][Battery_Capacity][Battery_Capacity][1] = 0
-        dp[0][Battery_Capacity][Battery_Capacity][2] = 0 # 到达时间
-        dp[0][Battery_Capacity][Battery_Capacity][3] = 0 # 离开时间
-
-        for i in range(1,N):
-
-            dis = Dis_List[route[i]][route[i - 1]][2]
-            charge = dis * P_Dis_Charge
-            time = dis * P_Delivery_Speed
-
-            # index = 0
-
-            # print('a',instance['s'][route[i]])
-            # print('b', Time_Window[index][i][1])
-
-            # time_L = Time_Window[index][i][0] + instance['s'][route[i]] # 能够，最早离开旳时间
-            time_R = Time_Window[index][i][1] + instance['s'][route[i]] # 必须，最晚离开的时间
-
-            # 不充电
-            for j in range(0,Battery_Capacity + 1):
-                if(j + charge <= Battery_Capacity):
-                    for k in range(0,Battery_Capacity + 1):
-                        if(k <= j + charge):
-                            if(dp[i][j][0][0] >= dp[i - 1][j + charge][k][0] and dp[i - 1][j + charge][k][3] + time + instance['s'][route[i]] <= time_R):
-                                if(dp[i][j][0][0] > dp[i - 1][j + charge][k][0]):
-                                    dp[i][j][0][0] = dp[i - 1][j + charge][k][0]
-                                    dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
-                                    dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time # 到达时间
-                                    dp[i][j][0][3] = max(dp[i][j][0][2],instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
-                                    Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
-                                else:# 代价相等，取离开时间更早的，
-                                    tmp_3 = max(dp[i - 1][j + charge][k][3] + time,instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
-                                    if(dp[i][j][0][3] > tmp_3):
-                                        dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
-                                        dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time  # 到达时间
-                                        dp[i][j][0][3] = max(dp[i][j][0][2], instance['tl'][route[i]]) + instance['s'][
-                                            route[i]]  # 离开时间
-                                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
-
-
-                # print('i:',i," j:",j," prenode:",Pre_Node[i][j][0])
-                    # early_charge_finish = dp[i - 1][j + charge][2] + dp[i - 1][j + charge][4]
-                    # early_serve_finish = max(dp[i - 1][j + charge][2],instance['tl'][route[i]]) + instance['s'][route[i]]
-
-            # 充电
-            for j in range(0,Battery_Capacity + 1):
-                k1 = Battery_Capacity - j
-                k2 = dp[i][j][0][2]
-                for k in range(1, j + 1):
-                    charge_time = k * P_Charge_Time
-                    pre = dp[i][j - k][0][1]
-                    if (pre == -1):
-                        continue
-                    dp[i][j][k][0] = dp[i][j - k][0][0] + Dis_List[route[i]][route[pre]][2]
-                    dp[i][j][k][1] = i
-                    dp[i][j][k][2] = dp[i][j - k][0][2]
-                    if(dp[i][j][k][2] < instance['tl'][route[i]]): # 如果到达时间小于最早服务时间，可以先开始充电，可边服务边充电
-                        dp[i][j][k][3] = max(dp[i][j][k][2] + charge_time,instance['tl'][route[i]] + instance['s'][route[i]])
-                    else:
-                        dp[i][j][k][3] = dp[i][j][k][2] + max(charge_time,instance['s'][route[i]])
-                    if(dp[i][j][k][3] > time_R):
-                        dp[i][j][k][0] = float('inf')
-                        dp[i][j][k][1] = -1
-                        continue
-                    Pre_Node[i][j][k] = copy.deepcopy(Pre_Node[i][j - k][0])
-                    Pre_Node[i][j][k].append(i)
-                    # print('i:',i," j:",j,' k:',k, " pre:", pre, "prenode:",Pre_Node[i][j][k],"pre list",Pre_Node[i][j - k][0])
-
-        Min_dis = float('inf')
-        Min_disj = -1
-        Min_disk = -1
-        print(dp[1][12][10])
-        print(dp[2][10][0])
-        print(dp[2][12][12])
-        print(dp[3][4][0])
-        print(dp[3][6][0])
-        print(dp[3][12][6])
-        print(Pre_Node[3][12][8])
-
-        for j in range(0,Battery_Capacity + 1):
-            for k in range(1,Battery_Capacity + 1):
-                if(Min_dis > dp[N - 1][j][k][0]):
-                    Min_dis = dp[N - 1][j][k][0]
-                    Min_disj = j
-                    Min_disk = k
-        print("Min_dis:",Min_dis," Min_disj:",Min_disj," Min_disk:",Min_disk)
-        # print("Min_disj",Min_disj)
-        # print("Min_disk",Min_disk)
-        # print(Pre_Node[N - 1][Min_disj][Min_disk])
-
-        # for i ,j in [1, 3, 5, 8, 10, 12],[]:
-        #     print(i, dp[i][min(f[i], 12)][1])
-
-        # print(Pre_Node)
-
-        # for i in range(N):
-        #     print(i,":",Pre_Node[i])
-
-        # 回溯
-        for node in Pre_Node[N - 1][Min_disj][Min_disk]:
-            if (node != 0 and node != N - 1):
-                ANS.append(route[node])
-
-    return ANS
-
-
 def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
 
     # print(Dis_List[0][25][2] + Dis_List[25][27][2])
@@ -309,6 +180,138 @@ def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): #DP部分
                 ANS.append(route[node])
 
     return ANS
+
+
+def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):
+    ANS = []
+
+    # print(Dis_List[0][25][2] + Dis_List[25][27][2])
+    # print(Dis_List[0][13][2] + Dis_List[13][27][2])
+    # print(Dis_List[0][13][2])
+    # print(Dis_List[25][27][2])
+    for index,route in enumerate(route_pool):
+        N = len(route)
+        dp = np.zeros((N + 2,Battery_Capacity + 1,Battery_Capacity + 1,4)).tolist()
+
+        Pre_Node = [[[[] for _ in range(Battery_Capacity + 1)] for _ in range(Battery_Capacity + 1)] for _ in range(N + 1)]
+
+
+        for i in range(0,N + 1):
+            for j in range(0,Battery_Capacity + 1):
+                for k in range(0,Battery_Capacity + 1):
+                    dp[i][j][k][0] = float('inf')
+                    dp[i][j][k][1] = -1
+                    dp[i][j][k][2] = 0
+                    dp[i][j][k][3] = 0
+
+        dp[0][Battery_Capacity][Battery_Capacity][0] = 0 # 代价
+        dp[0][Battery_Capacity][Battery_Capacity][1] = 0 # 前一个充电的点
+        dp[0][Battery_Capacity][Battery_Capacity][2] = 0 # 到达时间
+        dp[0][Battery_Capacity][Battery_Capacity][3] = 0 # 离开时间
+
+        for i in range(1,N):
+
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+            time = dis * P_Delivery_Speed
+
+            # index = 0
+
+            # print('a',instance['s'][route[i]])
+            # print('b', Time_Window[index][i][1])
+
+            # time_L = Time_Window[index][i][0] + instance['s'][route[i]] # 能够，最早离开旳时间
+            time_R = Time_Window[index][i][1] + instance['s'][route[i]] # 必须，最晚离开的时间
+
+            # 不充电
+            for j in range(0,Battery_Capacity + 1):
+                if(j + charge <= Battery_Capacity):
+                    for k in range(0,Battery_Capacity + 1):
+                        if(k <= j + charge):
+                            if(dp[i][j][0][0] >= dp[i - 1][j + charge][k][0] and dp[i - 1][j + charge][k][3] + time + instance['s'][route[i]] <= time_R):
+                                if(dp[i][j][0][0] > dp[i - 1][j + charge][k][0]):
+                                    dp[i][j][0][0] = dp[i - 1][j + charge][k][0]
+                                    dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                    dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time # 到达时间
+                                    dp[i][j][0][3] = max(dp[i][j][0][2],instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+                                else:# 代价相等，取离开时间更早的，
+                                    tmp_3 = max(dp[i - 1][j + charge][k][3] + time,instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    if(dp[i][j][0][3] > tmp_3):
+                                        dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                        dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time  # 到达时间
+                                        dp[i][j][0][3] = max(dp[i][j][0][2], instance['tl'][route[i]]) + instance['s'][
+                                            route[i]]  # 离开时间
+                                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+
+
+                # print('i:',i," j:",j," prenode:",Pre_Node[i][j][0])
+                    # early_charge_finish = dp[i - 1][j + charge][2] + dp[i - 1][j + charge][4]
+                    # early_serve_finish = max(dp[i - 1][j + charge][2],instance['tl'][route[i]]) + instance['s'][route[i]]
+
+            # 充电
+            for j in range(0,Battery_Capacity + 1):
+                k1 = Battery_Capacity - j
+                k2 = dp[i][j][0][2]
+                for k in range(1, j + 1):
+                    charge_time = k * P_Charge_Time
+                    pre = dp[i][j - k][0][1]
+                    if (pre == -1):
+                        continue
+                    dp[i][j][k][0] = dp[i][j - k][0][0] + Dis_List[route[i]][route[pre]][2]
+                    dp[i][j][k][1] = i
+                    dp[i][j][k][2] = dp[i][j - k][0][2]
+                    if(dp[i][j][k][2] < instance['tl'][route[i]]): # 如果到达时间小于最早服务时间，可以先开始充电，可边服务边充电
+                        dp[i][j][k][3] = max(dp[i][j][k][2] + charge_time,instance['tl'][route[i]] + instance['s'][route[i]])
+                    else:
+                        dp[i][j][k][3] = dp[i][j][k][2] + max(charge_time,instance['s'][route[i]])
+                    if(dp[i][j][k][3] > time_R):
+                        dp[i][j][k][0] = float('inf')
+                        dp[i][j][k][1] = -1
+                        continue
+                    Pre_Node[i][j][k] = copy.deepcopy(Pre_Node[i][j - k][0])
+                    Pre_Node[i][j][k].append(i)
+                    # print('i:',i," j:",j,' k:',k, " pre:", pre, "prenode:",Pre_Node[i][j][k],"pre list",Pre_Node[i][j - k][0])
+
+        Min_dis = float('inf')
+        Min_disj = -1
+        Min_disk = -1
+        print(dp[1][12][10])
+        print(dp[2][10][0])
+        print(dp[2][12][12])
+        print(dp[3][4][0])
+        print(dp[3][6][0])
+        print(dp[3][12][6])
+        print(Pre_Node[3][12][8])
+
+        for j in range(0,Battery_Capacity + 1):
+            for k in range(1,Battery_Capacity + 1):
+                if(Min_dis > dp[N - 1][j][k][0]):
+                    Min_dis = dp[N - 1][j][k][0]
+                    Min_disj = j
+                    Min_disk = k
+        print("Min_dis:",Min_dis," Min_disj:",Min_disj," Min_disk:",Min_disk)
+        # print("Min_disj",Min_disj)
+        # print("Min_disk",Min_disk)
+        # print(Pre_Node[N - 1][Min_disj][Min_disk])
+
+        # for i ,j in [1, 3, 5, 8, 10, 12],[]:
+        #     print(i, dp[i][min(f[i], 12)][1])
+
+        # print(Pre_Node)
+
+        # for i in range(N):
+        #     print(i,":",Pre_Node[i])
+
+        # 回溯
+        for node in Pre_Node[N - 1][Min_disj][Min_disk]:
+            if (node != 0 and node != N - 1):
+                ANS.append(route[node])
+
+    return ANS
+
+
+
 
 # 21 33 40 45 47
 #  [0, 18, 34, 11, 28, 20, 26, 41],

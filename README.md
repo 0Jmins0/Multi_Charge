@@ -123,42 +123,6 @@ q = 0.88
 2. 输入：两个点的 `idx`
 3. 输出：两个点的距离（四舍五入为整数）
 
-`def Get_Route_Cost(route):`
-1. 作用：查询一条路径的花费,不算购车花费
-2. 输入：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，N + 1`)
-3. 输出：路径总花费（四舍五入为整数）
-
-`def Get_Sol_Cost(sol):`
-1. 作用：查询一个解（路线池）的总花费
-2. 输入：路线池，一个二维列表，每一行为一条路径，每条路径包括一些用户的 `idx`(每行第一个和最后一个元素分别为 `0，num + 1`)
-3. 输出：一个整数，表示这个路径池的总消费（包括距离换算成电量，电量换算为花费，加上每条路径购置送货车的花费）
-
-`def Check_Time(route):`
-1. 作用：检查一条路径是否符合时间窗，如果符合，则返回该路径下，每个点的时间窗。
-2. 输入：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，num + 1`)、
-3. 输出：二维列表，每行代表一个点到达的时间窗，一个时间窗包括两个元素，第一个元素为最早到达时间，第二个元素为最晚离开时间，当列表为空的时候，表示不合法路径
-      e.g:`time_window[i][0]`: `route[i]` 的最早可达时间
-          `time_window[i][1]`: `toure[i]` 的最晚离开时间
-4. 思路：
-   1. 从后向前遍历，获得每个点可以最晚离开的时间，如果一个点的最晚离开时间 + 服务时间 > tr 则判定为不合法
-   2. 从前到后遍历，获得每个点可以最早到达的时间
-
-`def Ins_Customer_To_Route(customer,route):`
-1. 作用：将一个用户插入到一条路径的最佳位置，如果不能插入，则返回 `INF`
-2. 输入：
-   1. `customer`:一个 `idx`
-   2. `route`：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，num + 1`)
-3. 输出：
-   1. 最佳插入位置
-   2. 插入该位置后，路线的总消费，不包括购车花费。
-
-`def Remove(bank, cur_sol):`
-1. 从当前路线池中，删除一些点，返回操作后的路线池
-2. 输入：
-   1. `bank`:一个存有需要删除点的 `idx` 的列表
-   2. `cur_sol`:路线池，一个二维列表，每一行为一条路径，每条路径包括一些用户的 `idx`(每行第一个和最后一个元素分别为 `0，num + 1`)
-3. 输出：一个二维列表，表示删除相应点后的路线池
-
 `def Get_Init_Sol():`
 1. 作用：获得一个路线池及其花费
 
@@ -198,6 +162,59 @@ q = 0.88
 
 
 
+### local_search.py
+#### 功能
+邻域搜索，对LNS中，更优秀的解进行邻域搜索
+
+**基本思路：** 按顺序尝试每一个邻域搜索操作符，如果经过某个操作符后，结果变好了，则退回到第一个操作符。
+
+**结束条件：** 直到连续尝试了len(LocalOperator_Pool) 个操作符都没有提升。
+
+### function.py
+#### 功能
+存储一些通用的功能类函数
+
+
+#### 主要函数介绍
+`def Get_Route_Cost(route):`
+1. 作用：查询一条路径的花费,不算购车花费
+2. 输入：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，N + 1`)
+3. 输出：路径总花费（四舍五入为整数）
+
+
+`def Get_Sol_Cost(sol):`
+1. 作用：查询一个解（路线池）的总花费
+2. 输入：路线池，一个二维列表，每一行为一条路径，每条路径包括一些用户的 `idx`(每行第一个和最后一个元素分别为 `0，num + 1`)
+3. 输出：一个整数，表示这个路径池的总消费（包括距离换算成电量，电量换算为花费，加上每条路径购置送货车的花费）
+
+
+`def Check_Time(route):`
+1. 作用：检查一条路径是否符合时间窗，如果符合，则返回该路径下，每个点的时间窗。
+2. 输入：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，num + 1`)、
+3. 输出：二维列表，每行代表一个点到达的时间窗，一个时间窗包括两个元素，第一个元素为最早到达时间，第二个元素为最晚离开时间，当列表为空的时候，表示不合法路径
+      e.g:`time_window[i][0]`: `route[i]` 的最早可达时间
+          `time_window[i][1]`: `toure[i]` 的最晚离开时间
+4. 思路：
+   1. 从后向前遍历，获得每个点可以最晚离开的时间，如果一个点的最晚离开时间 + 服务时间 > tr 则判定为不合法
+   2. 从前到后遍历，获得每个点可以最早到达的时间
+
+
+`def Ins_Customer_To_Route(customer,route):`
+1. 作用：将一个用户插入到一条路径的最佳位置，如果不能插入，则返回 `INF`
+2. 输入：
+   1. `customer`:一个 `idx`
+   2. `route`：一个存有一条 **完整** 路径 `idx` 的列表(完整：第一个元素和最后一个元素分别为 `0，num + 1`)
+3. 输出：
+   1. 最佳插入位置
+   2. 插入该位置后，路线的总消费，不包括购车花费。
+
+`def Remove(bank, cur_sol):`
+1. 从当前路线池中，删除一些点，返回操作后的路线池
+2. 输入：
+   1. `bank`:一个存有需要删除点的 `idx` 的列表
+   2. `cur_sol`:路线池，一个二维列表，每一行为一条路径，每条路径包括一些用户的 `idx`(每行第一个和最后一个元素分别为 `0，num + 1`)
+3. 输出：一个二维列表，表示删除相应点后的路线池
+
 
 ### feasiblity.py
 #### 功能
@@ -207,64 +224,156 @@ q = 0.88
 `def check(route_pool,instance,Dis_List): `
 1. 输入 
    1.  `route_pool` : 路线池
-   2.  `instance` : 问题设定
+   2.  `instance` : 数据
 2. 输出
    1. 一个列表，存储需要充电的点的 `idx`
-3. 思路
-   1. 方程 `dp[i][j][k][0/1]` : 刚走到第 `i` 个点时，还剩 `j` 个电量，在 `i` 点充了 `k` 个电，
-      1. 0：花费，
-      2. 1：最晚充电的点（自己，或者上一个充电的位置）
-      3. 2：除了自己上一个充电点（除了自己上一个充电的位置）
-      4. 3：最晚充电点的充电量
-   2. 初始化
-      1. `dp[][][][0] = INF`
-      2. `dp[][][][1] = -1`
-      3. `dp[][][][2] = -1`
-      4. `dp[][][][3] = 0`
-      5. `dp[0][Battery_Capacity][0][0] = 0`
-   3. 转移
-      1. `cus = dis(i,i-1) * P_Dis_Charge` ： `i` 到 `i - 1` 的耗电量
-      2. 
-      ```python
-      # 不充电：
-      # j + k <= Battery_Capacity
-      # 0 <= j - kk + cus <= Battery_Capacity
-      p = dp[i - 1][j - kk + cus][kk][1] 
-      if(dp[i][j][0][0] > dp[i - 1][j - kk + cus][kk][0]):
-        dp[i][j][0][0] = dp[i - 1][j - kk + cus][kk][0]
-        dp[i][j][0][1] = p
-        dp[i][j][0][2] = p
-        dp[i][j][0][3] = kk
-      
-      # 充电
-      if(dp[i][j][k][0] > dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost):
-        dp[i][j][k][0] = dp[i - 1][j - kk + cus][kk][0] + (dis(i,p) * p_dis_charge + k) * P_Charge_Cost
-        dp[i][j][k][1] = i
-        dp[i][j][k][2] = p
-        dp[i][j][k][3] = kk
-      ```
-   4. 答案
-      1. `ans = min(dp[n][][][0])`,
-         2. 剩余电量 `J`，
-         3. 充电量 `K` ,
-         4. 最后一次充电点 `now = dp[n][J][K][1]`
-         5. `now` 的前一次充电点 `pre = dp[n][J][K][2]` (当 `n` 不是充电点时， `now == pre`)
-         6. 最后一次充电点充电量 `KK = dp[n][J][K][3]`
-      2. 路线：
-      ```python
-      if(now == n):
-        ANS.append(n)
-      now = n
-      while (pre != 0):
-        ANS.append(pre)
-        cus = dis(now,pre) * p_dis_charge
-        J = J + cus - KK # pre 点对应的剩余电量
-        K = KK # pre 点对应的充电量
-        now = pre
-        pre = dp[now][J][K][2] # pre 的前一个点
-        KK = dp[now][J][K][3] # pre 前一个点对应的充电量
+3. 问题设定：假设充电时间是远小于服务时间的，在不考虑时间时间窗的条件下，求解每条线路的最佳充电位置
+4. 思路：
+   1. 对于每一个点，只有充电或者不冲电两种选择（贪心的讲，如果充电则直接充满）
+   2. ```python
+        for i in range(1,N):
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+
+            # 不充电
+            for j in range(0,Battery_Capacity):
+                if(j + charge <= Battery_Capacity):
+                    dp[i][j][0] = dp[i - 1][j + charge][0]
+                    dp[i][j][1] = dp[i - 1][j + charge][1]
+
+            # 充电
+            for j in range(0,Battery_Capacity):
+                pre = dp[i][j][1]
+                if(pre == -1):
+                    continue
+                disj = Dis_List[route[i]][route[pre]][2]
+                chargej = disj * P_Dis_Charge
+                if(dp[i][Battery_Capacity][0] > dp[i][j][0] + disj):
+                    dp[i][Battery_Capacity][0] = dp[i][j][0] + disj
+                    Pre_Node[i] = copy.deepcopy(Pre_Node[dp[i][j][1]])
+                    Pre_Node[i].append(i)
+
+            dp[i][Battery_Capacity][1] = i
       ```
    
+
+`def check_with_regular_time(route_pool,instance,Dis_List,Time_Window): `
+1. 问题设定：考虑时间窗和充电时间问题，假设服务结束后马上离开，从0时刻出发，预处理每个点的充电时长 `f[i]`
+2. 思路：
+   1. 对于每一点，也只有充电或者不充电俩种选择，充电则冲到固定时间（不超过电池容量）
+   2. 状态表示
+      ```python
+        dp[0][Battery_Capacity][1][0] = 0 # 离开0点，有B的电量，没有充电，的代价
+        dp[0][Battery_Capacity][1][1] = 0 # 离开0点，有B的电量，充电后，最后一个充电的点
+      ```
+   2. ```python
+        for i in range(1, N):
+
+            # i - 1 到 i 的耗电量
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+
+            # 不充电
+            # dp[i][j][0][0] <--- dp[i - 1][j + charge][0/1][0]
+            for j in range(0, Battery_Capacity):
+                if (j + charge <= Battery_Capacity):
+                    if(dp[i - 1][j + charge][0][0] < dp[i][j + charge][1][0]):
+                        dp[i][j][0][0] = dp[i - 1][j + charge][0][0]
+                        dp[i][j][0][1] = dp[i - 1][j + charge][0][1]
+                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][0])
+                    else:
+                        dp[i][j][0][0] = dp[i - 1][j + charge][1][0]
+                        dp[i][j][0][1] = dp[i - 1][j + charge][1][1]
+                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][1])
+
+            # 充电
+            for j in range(0, Battery_Capacity):
+                pre = dp[i][j][0][1]
+                if(pre == -1):
+                    continue
+                disj = Dis_List[route[i]][route[pre]][2]
+                chargej = disj * P_Dis_Charge
+
+                if(j <= Battery_Capacity - f[i]): # 不会充溢出
+                    dp[i][j + f[i]][1][0] = dp[i][j][0][0] + disj
+                    dp[i][j + f[i]][1][1] = i
+                    Pre_Node[i][j + f[i]][1] = copy.deepcopy(Pre_Node[i][j][0])
+                    Pre_Node[i][j + f[i]][1].append(i)
+
+                else:
+                    dp[i][Battery_Capacity][1][1] = i
+                    if (dp[i][Battery_Capacity][1][0] > dp[i][j][0][0] + disj):
+                        dp[i][Battery_Capacity][1][0] =dp[i][j][0][0] + disj
+                        Pre_Node[i][Battery_Capacity][1] = copy.deepcopy(Pre_Node[i][j][0])
+                        Pre_Node[i][Battery_Capacity][1].append(i)
+       ```   
+
+
+`def check_with_timewindow(route_pool,instance,Dis_List,Time_Window):`
+1. 问题设定：考虑时间窗，同时每个点可以线性的充电，根据时间窗限制，每个点有一个最长充电时间（跟当前状态也有关）
+2. 思路：
+   1. 每个点要根据转移来的状态，确定当前状态可以充电的时间范围，选择充电量
+   2. 状态表示：离开 i 点，有 j 电量，充了 k $$ \belong [0,B]$$  的电
+      3. ```python
+        dp[0][Battery_Capacity][Battery_Capacity][0] = 0 # 代价
+        dp[0][Battery_Capacity][Battery_Capacity][1] = 0 # 最后一个充电的点
+        dp[0][Battery_Capacity][Battery_Capacity][2] = 0 # 到达时间
+        dp[0][Battery_Capacity][Battery_Capacity][3] = 0 # 离开时间
+         ```
+   3. ```python
+        for i in range(1,N):
+
+            dis = Dis_List[route[i]][route[i - 1]][2]
+            charge = dis * P_Dis_Charge
+            time = dis * P_Delivery_Speed
+
+            time_R = Time_Window[index][i][1] + instance['s'][route[i]] # 必须，最晚离开的时间
+
+            # 不充电
+            for j in range(0,Battery_Capacity + 1):
+                if(j + charge <= Battery_Capacity):
+                    for k in range(0,Battery_Capacity + 1):
+                        if(k <= j + charge):
+                            if(dp[i][j][0][0] >= dp[i - 1][j + charge][k][0] and dp[i - 1][j + charge][k][3] + time + instance['s'][route[i]] <= time_R):
+                                if(dp[i][j][0][0] > dp[i - 1][j + charge][k][0]):
+                                    dp[i][j][0][0] = dp[i - 1][j + charge][k][0]
+                                    dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                    dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time # 到达时间
+                                    dp[i][j][0][3] = max(dp[i][j][0][2],instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+                                else:# 代价相等，取离开时间更早的，
+                                    tmp_3 = max(dp[i - 1][j + charge][k][3] + time,instance['tl'][route[i]]) + instance['s'][route[i]] # 离开时间
+                                    if(dp[i][j][0][3] > tmp_3):
+                                        dp[i][j][0][1] = dp[i - 1][j + charge][k][1]
+                                        dp[i][j][0][2] = dp[i - 1][j + charge][k][3] + time  # 到达时间
+                                        dp[i][j][0][3] = max(dp[i][j][0][2], instance['tl'][route[i]]) + instance['s'][
+                                            route[i]]  # 离开时间
+                                        Pre_Node[i][j][0] = copy.deepcopy(Pre_Node[i - 1][j + charge][k])
+            # 充电
+            for j in range(0,Battery_Capacity + 1):
+                k1 = Battery_Capacity - j
+                k2 = dp[i][j][0][2]
+                for k in range(1, j + 1):
+                    charge_time = k * P_Charge_Time
+                    pre = dp[i][j - k][0][1]
+                    if (pre == -1):
+                        continue
+                    dp[i][j][k][0] = dp[i][j - k][0][0] + Dis_List[route[i]][route[pre]][2]
+                    dp[i][j][k][1] = i
+                    dp[i][j][k][2] = dp[i][j - k][0][2]
+                    if(dp[i][j][k][2] < instance['tl'][route[i]]): # 如果到达时间小于最早服务时间，可以先开始充电，可边服务边充电
+                        dp[i][j][k][3] = max(dp[i][j][k][2] + charge_time,instance['tl'][route[i]] + instance['s'][route[i]])
+                    else:
+                        dp[i][j][k][3] = dp[i][j][k][2] + max(charge_time,instance['s'][route[i]])
+                    if(dp[i][j][k][3] > time_R):
+                        dp[i][j][k][0] = float('inf')
+                        dp[i][j][k][1] = -1
+                        continue
+                    Pre_Node[i][j][k] = copy.deepcopy(Pre_Node[i][j - k][0])
+                    Pre_Node[i][j][k].append(i)
+
+        ```
+
 ### draw.py
 #### 功能
 绘制该问题设定的图像，内容包括：
